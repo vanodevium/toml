@@ -1,0 +1,67 @@
+{
+    "name": "devium/toml",
+    "version": "1.0.0",
+    "description": "A PHP encoder/decoder for TOML",
+    "keywords": ["php", "toml"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vano Devium",
+            "email": "vano@devium.me"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "ext-json": "*",
+        "php-ds/php-ds": "^1.5",
+        "symfony/polyfill-mbstring": "^1.30"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.17.1",
+        "pestphp/pest": "^2.35",
+        "phpstan/phpstan": "^1.11.9",
+        "rector/rector": "^1.2.2",
+        "symfony/var-dumper": "^7.1.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Devium\\Toml\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "suggest": {
+        "ext-ds": "For best performance",
+        "ext-mbstring": "For best performance"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "preferred-install": "dist",
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "scripts": {
+        "refacto": "rector",
+        "lint": "pint",
+        "test:refacto": "rector --dry-run",
+        "test:lint": "pint --test",
+        "test:types": "phpstan analyse --ansi src",
+        "test:unit": "pest --colors=always",
+        "test": [
+            "@test:refacto",
+            "@test:lint",
+            "@test:types",
+            "@test:unit"
+        ]
+    }
+}

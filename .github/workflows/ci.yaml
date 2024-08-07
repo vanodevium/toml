@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-versions: [ "8.2", "8.3" ]
+    name: PHP ${{ matrix.php-versions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+
+      - name: Install dependencies
+        run: composer install
+
+      - name: Run tests
+        run: composer test
