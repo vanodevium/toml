@@ -14,24 +14,26 @@ final class TomlError extends Exception
 
     public function __construct(
         string $message = '',
-        array $options = [
-            'toml' => '',
-            'ptr' => 0,
-        ],
+        string $toml = '',
+        int $position = -1,
     ) {
-        [$line, $column] = $this->getLineColFromPtr($options['toml'], $options['ptr']);
-        $codeBlock = $this->makeCodeBlock($options['toml'], $line, $column);
+        if ($position < 0) {
+            parent::__construct($message);
+        } else {
+            [$line, $column] = $this->getLineColFromPosition($toml, $position);
+            $codeBlock = $this->makeCodeBlock($toml, $line, $column);
 
-        parent::__construct("Invalid TOML document: $message\n\n$codeBlock");
+            $this->tomlLine = $line;
+            $this->tomlColumn = $column;
+            $this->tomlCodeBlock = $codeBlock;
 
-        $this->tomlLine = $line;
-        $this->tomlColumn = $column;
-        $this->tomlCodeBlock = $codeBlock;
+            parent::__construct("Invalid TOML document: $message\n\n$codeBlock");
+        }
     }
 
-    protected function getLineColFromPtr($string, $pointer): array
+    protected function getLineColFromPosition($string, $position): array
     {
-        $lines = preg_split('/\r\n|\n|\r/', TomlUtils::stringSlice($string, 0, $pointer));
+        $lines = preg_split('/\r\n|\n|\r/', TomlUtils::stringSlice($string, 0, $position));
 
         return [count($lines), strlen((string) array_pop($lines))];
     }

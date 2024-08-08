@@ -49,22 +49,30 @@ final class TomlParser
      */
     public function parse(): RootTableNode
     {
-        for (; ;) {
-            $node = $this->expression();
-            if (! $node) {
-                break;
-            }
+        try {
+            for (; ;) {
+                $node = $this->expression();
+                if (! $node) {
+                    break;
+                }
 
-            $this->tokenizer->take('WHITESPACE');
-            $this->tokenizer->take('COMMENT');
-            $this->tokenizer->assert('NEWLINE', 'EOF');
-            $this->keystore->addNode($node);
-            if (in_array($node::class, [TableNode::class, ArrayTableNode::class])) {
-                $this->tableNode = $node;
-                $this->rootTableNode->addElement($node);
-            } else {
-                $this->tableNode->addElement($node);
+                $this->tokenizer->take('WHITESPACE');
+                $this->tokenizer->take('COMMENT');
+                $this->tokenizer->assert('NEWLINE', 'EOF');
+                $this->keystore->addNode($node);
+                if (in_array($node::class, [TableNode::class, ArrayTableNode::class])) {
+                    $this->tableNode = $node;
+                    $this->rootTableNode->addElement($node);
+                } else {
+                    $this->tableNode->addElement($node);
+                }
             }
+        } catch (TomlError $error) {
+            throw new TomlError(
+                $error->getMessage(),
+                $this->tokenizer->getIteratorInput(),
+                $this->tokenizer->getIteratorPosition(),
+            );
         }
 
         return $this->rootTableNode;
@@ -368,6 +376,11 @@ final class TomlParser
     public function parseInteger(
         $value, $isSignAllowed, $areLeadingZerosAllowed, $isUnparsedAllowed, $radix, bool $asString = false
     ): array {
+
+        if (preg_match('/[^0-9-+._oxabcdef]/i', (string) $value)) {
+            throw new TomlError('unexpected non-numeric value');
+        }
+
         $sign = '';
         $i = 0;
         if ($value[$i] === '+' || $value[$i] === '-') {

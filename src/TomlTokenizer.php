@@ -30,8 +30,6 @@ final class TomlTokenizer
         '\\' => '\\',
     ];
 
-    protected string $input;
-
     protected TomlInputIterator $iterator;
 
     /**
@@ -39,19 +37,17 @@ final class TomlTokenizer
      */
     public function __construct(string $input)
     {
-        $this->validateInput($input);
-        $this->input = $input;
-        $this->iterator = new TomlInputIterator($input);
+        $this->iterator = new TomlInputIterator($this->validateInput($input));
     }
 
-    /**
-     * @throws TomlError
-     */
-    protected function validateInput(string $input): void
+    public function getIteratorInput(): string
     {
-        if (preg_match('/("""\n?.*\\\\ )|(\\\\ .*\n?""")/', $input)) {
-            throw new TomlError('unexpected \\<space> escaping');
-        }
+        return $this->iterator->input;
+    }
+
+    public function getIteratorPosition(): int
+    {
+        return $this->iterator->pos;
     }
 
     /**
@@ -150,7 +146,7 @@ final class TomlTokenizer
     {
         return TomlToken::fromArray([
             'type' => $type,
-            'value' => TomlUtils::stringSlice($this->input, $start, $this->iterator->pos + 1),
+            'value' => TomlUtils::stringSlice($this->iterator->input, $start, $this->iterator->pos + 1),
         ]);
     }
 
@@ -359,5 +355,17 @@ final class TomlTokenizer
         }
 
         return $token;
+    }
+
+    /**
+     * @throws TomlError
+     */
+    protected function validateInput(string $input): string
+    {
+        if (preg_match('/("""\n?.*\\\\ )|(\\\\ .*\n?""")/', $input)) {
+            throw new TomlError('unexpected \\<space> escaping');
+        }
+
+        return $input;
     }
 }
