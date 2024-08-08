@@ -39,6 +39,20 @@ abstract class TomlAbstractDateTime implements Stringable
         return $value >= 0 && $value < 60;
     }
 
+    protected static function isValidFebruary(int $year, int $month, int $day): bool
+    {
+        if ($month !== 2) {
+            return true;
+        }
+
+        return $day <= (self::isLeap($year) ? 29 : 28);
+    }
+
+    protected static function isLeap(int $year): bool
+    {
+        return ($year % 4 === 0 && $year % 100 !== 0) || $year % 400 === 0;
+    }
+
     abstract public function __toString(): string;
 
     protected function zeroPad(int $int, int $len = 2): string

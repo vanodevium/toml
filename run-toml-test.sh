@@ -4,16 +4,8 @@
 # go install github.com/toml-lang/toml-test/cmd/toml-test@latest
 
 skip_decode=(
+    -skip='valid/key/quoted-unicode'
 	-skip='invalid/encoding/bad-utf8-*'
-	-skip='invalid/local-date/feb-29'
-	-skip='invalid/local-date/feb-30'
-	-skip='invalid/local-datetime/feb-29'
-	-skip='invalid/local-datetime/feb-30'
-	-skip='invalid/datetime/feb-30'
-	-skip='invalid/datetime/feb-29'
-	-skip='invalid/datetime/offset-overflow-hour'
-
-	-skip='valid/key/quoted-unicode'
 	-skip='invalid/encoding/bad-codepoint'
 )
 
@@ -22,7 +14,7 @@ skip_encode=(
 	-skip='valid/float/zero'
 	-skip='valid/float/exponent'
 	-skip='valid/float/max-int'
-  -skip='valid/float/long'
+    -skip='valid/float/long'
 	-skip='valid/key/quoted-unicode'
 	-skip='valid/comment/tricky'
 	-skip='valid/spec/float-0'

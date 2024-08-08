@@ -70,8 +70,8 @@ final class TomlParser
         } catch (TomlError $error) {
             throw new TomlError(
                 $error->getMessage(),
-                $this->tokenizer->getIteratorInput(),
-                $this->tokenizer->getIteratorPosition(),
+                $this->tokenizer->getInput(),
+                $this->tokenizer->getPosition(),
             );
         }
 

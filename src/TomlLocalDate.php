@@ -28,6 +28,10 @@ final class TomlLocalDate extends TomlAbstractDateTime
             throw new TomlError("invalid local date format \"$value\"");
         }
 
+        if (! self::isValidFebruary($year, $month, $day)) {
+            throw new TomlError('invalid local date: days of February');
+        }
+
         return new self($year, $month, $day);
     }
 
