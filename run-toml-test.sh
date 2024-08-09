@@ -10,16 +10,10 @@ skip_decode=(
 )
 
 skip_encode=(
-	-skip='valid/inline-table/spaces'
-	-skip='valid/float/zero'
-	-skip='valid/float/exponent'
+    -skip='valid/key/quoted-unicode'
 	-skip='valid/float/max-int'
     -skip='valid/float/long'
-	-skip='valid/key/quoted-unicode'
-	-skip='valid/comment/tricky'
-	-skip='valid/spec/float-0'
 	-skip='valid/spec/float-1'
-	-skip='valid/integer/long'
 )
 
 e=0

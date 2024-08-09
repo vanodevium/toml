@@ -115,7 +115,7 @@ class TomlTag
                         return -INF;
                     }
 
-                    return floatval($obj->value);
+                    return (float) $obj->value;
                 case 'datetime':
                     return new TomlDateTime($obj->value);
                 case 'datetime-local':

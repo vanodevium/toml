@@ -80,43 +80,52 @@ readonly class TomlEncoder
     /**
      * @throws TomlError
      */
-    protected static function stringifyValue(mixed $val, ?string $type = null): string
+    protected static function stringifyValue(mixed $value, ?string $type = null): string
     {
         if ($type === null) {
-            $type = self::extendedTypeOf($val);
+            $type = self::extendedTypeOf($value);
         }
 
         if ($type === 'integer' || $type === 'double') {
-            if (is_nan($val)) {
+            if (is_nan($value)) {
                 return 'nan';
             }
-            if ($val === INF) {
+            if ($value === INF) {
                 return 'inf';
             }
-            if ($val === -INF) {
+            if ($value === -INF) {
                 return '-inf';
             }
 
-            return (string) $val;
+            if ($type === 'double' && ! str_contains((string) $value, '.')) {
+                $value .= '.0';
+            }
+
+            return $value;
         }
+
         if ($type === 'boolean') {
-            return $val ? 'true' : 'false';
+            return $value ? 'true' : 'false';
         }
+
         if ($type === 'string') {
-            return self::formatString($val);
+            return self::formatString($value);
         }
+
         if ($type === 'date') {
-            if ($val === false) {
+            if ($value === false) {
                 throw new TomlError('cannot serialize invalid date');
             }
 
-            return (string) $val;
+            return (string) $value;
         }
+
         if ($type === 'object') {
-            return self::stringifyInlineTable($val);
+            return self::stringifyInlineTable($value);
         }
+
         if ($type === 'array') {
-            return self::stringifyArray($val);
+            return self::stringifyArray($value);
         }
 
         throw new TomlError('unrecognized type');
