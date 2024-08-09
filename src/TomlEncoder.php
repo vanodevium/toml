@@ -2,6 +2,7 @@
 
 namespace Devium\Toml;
 
+use DateTimeInterface;
 use stdClass;
 
 /**
@@ -34,6 +35,8 @@ readonly class TomlEncoder
         foreach ($arrayObject as $key => $value) {
             if (is_array($value) && array_is_list($value)) {
                 $return->{$key} = (array) self::toObject($value);
+            } elseif ($value instanceof DateTimeInterface) {
+                $return->{$key} = $value;
             } elseif (is_array($value) || is_object($value)) {
                 $return->{$key} = self::toObject($value);
             } else {
@@ -47,6 +50,10 @@ readonly class TomlEncoder
     protected static function extendedTypeOf(mixed $obj): string
     {
         if ($obj instanceof TomlDateTimeInterface) {
+            return 'date';
+        }
+
+        if ($obj instanceof DateTimeInterface) {
             return 'date';
         }
 
@@ -115,6 +122,10 @@ readonly class TomlEncoder
         if ($type === 'date') {
             if ($value === false) {
                 throw new TomlError('cannot serialize invalid date');
+            }
+
+            if ($value instanceof DateTimeInterface) {
+                return TomlInternalDateTime::toTOMLString($value);
             }
 
             return (string) $value;
@@ -193,7 +204,7 @@ readonly class TomlEncoder
     /**
      * @throws TomlError
      */
-    protected static function stringifyTable(stdClass $obj, string $prefix = ''): string
+    protected static function stringifyTable(object $obj, string $prefix = ''): string
     {
         $preamble = '';
         $tables = '';

@@ -1,6 +1,6 @@
 <?php
 
-it('can parse toml', function () {
+it('can decode toml', function () {
     $json = <<<'JSON'
 {
   "title": "TOML Example",

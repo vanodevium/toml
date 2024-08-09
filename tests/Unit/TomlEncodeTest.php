@@ -1,6 +1,6 @@
 <?php
 
-it('can parse toml', function () {
+it('can encode toml', function () {
     $json = <<<'JSON'
 {
   "title": "TOML Example",
@@ -106,4 +106,24 @@ name = "plantain"
 TOML_WRAP;
     expect(toml_encode(json_decode($json, false)))->toEqual($toml);
     expect(toml_encode(json_decode($json, true)))->toEqual($toml);
+});
+
+it('can encode DateTimeInterface', function () {
+    $expected = <<<'EXPECTED'
+DateTimeInterface = 1979-05-27T07:32:00.999Z
+DateTimeImmutable = 1979-05-27T07:32:00.999Z
+EXPECTED;
+
+    $data = [
+        DateTimeInterface::class => new DateTime('1979-05-27T00:32:00.999999-07:00'),
+        DateTimeImmutable::class => new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00'),
+    ];
+
+    expect(toml_encode($data))->toEqual($expected);
+
+    $data = new stdClass;
+    $data->{DateTimeInterface::class} = new DateTime('1979-05-27T00:32:00.999999-07:00');
+    $data->{DateTimeImmutable::class} = new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00');
+
+    expect(toml_encode($data))->toEqual($expected);
 });
