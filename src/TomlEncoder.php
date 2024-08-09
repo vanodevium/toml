@@ -46,7 +46,7 @@ readonly class TomlEncoder
 
     protected static function extendedTypeOf(mixed $obj): string
     {
-        if ($obj instanceof TomlAbstractDateTime) {
+        if ($obj instanceof TomlDateTimeInterface) {
             return 'date';
         }
 

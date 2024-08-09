@@ -120,7 +120,7 @@ final class TomlNormalizer
 
     protected static function isKeyValuePair($value): bool
     {
-        if ($value instanceof TomlAbstractDateTime) {
+        if ($value instanceof TomlInternalDateTime) {
             return false;
         }
 

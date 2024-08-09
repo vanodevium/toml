@@ -2,10 +2,7 @@
 
 namespace Devium\Toml;
 
-/**
- * @internal
- */
-final class TomlLocalDate extends TomlAbstractDateTime
+final class TomlLocalDate extends TomlInternalDateTime
 {
     public function __construct(
         public readonly int $year,

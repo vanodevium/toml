@@ -2,10 +2,7 @@
 
 namespace Devium\Toml;
 
-/**
- * @internal
- */
-final class TomlLocalTime extends TomlAbstractDateTime
+final class TomlLocalTime extends TomlInternalDateTime
 {
     public readonly int $millisecond;
 

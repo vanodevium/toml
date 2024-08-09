@@ -2,10 +2,7 @@
 
 namespace Devium\Toml;
 
-/**
- * @internal
- */
-final class TomlLocalDateTime extends TomlAbstractDateTime
+final class TomlLocalDateTime extends TomlInternalDateTime
 {
     public function __construct(
         public readonly int $year,
@@ -38,15 +35,15 @@ final class TomlLocalDateTime extends TomlAbstractDateTime
 
     public function __toString(): string
     {
-        return "{$this->dateToString()}T{$this->timeToString()}{$this->millisecondToString()}";
+        return "{$this->toDateString()}T{$this->toTimeString()}{$this->millisecondToString()}";
     }
 
-    private function dateToString(): string
+    private function toDateString(): string
     {
         return "{$this->zeroPad($this->year, 4)}-{$this->zeroPad($this->month)}-{$this->zeroPad($this->day)}";
     }
 
-    private function timeToString(): string
+    private function toTimeString(): string
     {
         return "{$this->zeroPad($this->hour)}:{$this->zeroPad($this->minute)}:{$this->zeroPad($this->second)}";
     }
