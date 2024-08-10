@@ -2,7 +2,7 @@ name: check availability
 
 on:
   schedule:
-    - cron: "0,15 * * * *"
+    - cron: "0,5 * * * *"
   push:
     branches:
       - main
