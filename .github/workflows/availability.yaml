@@ -2,7 +2,7 @@ name: check availability
 
 on:
   schedule:
-    - cron:  '0,15 * * * *'
+    - cron: "0,15 * * * *"
   push:
     branches:
       - main
@@ -12,12 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: [ "8.2", "8.3" ]
+        php-versions: ["8.2", "8.3"]
     name: PHP ${{ matrix.php-versions }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
