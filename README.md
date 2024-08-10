@@ -31,18 +31,21 @@ This library provides a comprehensive solution for working with TOML in PHP appl
 
 ### About TOML datetime formats
 
-This library tries to parse TOML datetime formats into next variants (according to the specification 1.0.0):
+This library tries to parse TOML datetime formats into next variants (according to the specification):
 
--   `Devium\Toml\TomlDateTime` (for [offset date time](https://toml.io/en/v1.0.0#offset-date-time))
--   `Devium\Toml\TomlLocalDatetime` (for [local date time](https://toml.io/en/v1.0.0#local-date-time))
--   `Devium\Toml\TomlLocalDate` (for [local date](https://toml.io/en/v1.0.0#local-date))
--   `Devium\Toml\TomlLocalTime` (for [local time](https://toml.io/en/v1.0.0#local-time))
+-   `Devium\Toml\TomlDateTime` (for the [offset date time](https://toml.io/en/v1.0.0#offset-date-time))
+-   `Devium\Toml\TomlLocalDatetime` (for the [local date time](https://toml.io/en/v1.0.0#local-date-time))
+-   `Devium\Toml\TomlLocalDate` (for the [local date](https://toml.io/en/v1.0.0#local-date))
+-   `Devium\Toml\TomlLocalTime` (for the [local time](https://toml.io/en/v1.0.0#local-time))
 
 Each class implements `Stringable` interface.
-`TomlLocal*` classes implement `TomlDateTimeInterface` for usability. Each class has public properties.
+
+`TomlLocal*` classes implement `TomlDateTimeInterface` for usability.
+Each class has public properties.
+
 There is `TomlDateTime` class to support TOML offset date time format also.
 
-Of course there is ability to encode any `DateTimeInterface` value into TOML datetime string.
+Of course any `DateTimeInterface` or `TomlDateTimeInterface` are encoded into TOML datetime string.
 
 ### About informative errors
 
@@ -58,7 +61,7 @@ Invalid TOML document: unexpected non-numeric value
 7:  dob = 1979-05-31T07:32:00-08:00
 ```
 
-Else it shows problem about whole input.
+Else it has message about whole input.
 
 ## Installation
 
