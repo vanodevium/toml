@@ -2,6 +2,7 @@
 
 namespace Devium\Toml;
 
+use DateTimeInterface;
 use stdClass;
 
 /**
@@ -17,7 +18,7 @@ readonly class TomlDecoder
         $parser = new TomlParser($input);
 
         if ($asArray) {
-            return json_decode(json_encode(TomlNormalizer::normalize($parser->parse())), true);
+            return self::toArray(TomlNormalizer::normalize($parser->parse()));
         }
 
         return self::toObject(TomlNormalizer::normalize($parser->parse()));
@@ -32,5 +33,32 @@ readonly class TomlDecoder
         }
 
         return is_array($arrayObject) ? $return : (object) $return;
+    }
+
+    protected static function toArray(mixed $object): mixed
+    {
+        if ($object instanceof DateTimeInterface) {
+            return $object;
+        }
+
+        if (is_array($object)) {
+            $return = [];
+            foreach ($object as $key => $value) {
+                $return[$key] = self::toArray($value);
+            }
+
+            return $return;
+        }
+
+        if (is_object($object)) {
+            $return = [];
+            foreach ((array) $object as $key => $value) {
+                $return[$key] = self::toArray($value);
+            }
+
+            return $return;
+        }
+
+        return $object;
     }
 }

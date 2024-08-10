@@ -1,7 +1,13 @@
 <?php
 
-it('can encode toml', function () {
-    $json = <<<'JSON'
+use Devium\Toml\TomlError;
+
+it('can encode toml',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $json = <<<'JSON'
 {
   "title": "TOML Example",
   "owner": {
@@ -60,7 +66,7 @@ it('can encode toml', function () {
   ]
 }
 JSON;
-    $toml = <<<'TOML_WRAP'
+        $toml = <<<'TOML_WRAP'
 title = "TOML Example"
 
 [owner]
@@ -104,26 +110,30 @@ name = "banana"
 [[fruits.varieties]]
 name = "plantain"
 TOML_WRAP;
-    expect(toml_encode(json_decode($json, false)))->toEqual($toml);
-    expect(toml_encode(json_decode($json, true)))->toEqual($toml);
-});
+        expect(toml_encode(json_decode($json, false)))->toEqual($toml)
+            ->and(toml_encode(json_decode($json, true)))->toEqual($toml);
+    });
 
-it('can encode DateTimeInterface', function () {
-    $expected = <<<'EXPECTED'
+it('can encode DateTimeInterface',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $expected = <<<'EXPECTED'
 DateTimeInterface = 1979-05-27T07:32:00.999Z
 DateTimeImmutable = 1979-05-27T07:32:00.999Z
 EXPECTED;
 
-    $data = [
-        DateTimeInterface::class => new DateTime('1979-05-27T00:32:00.999999-07:00'),
-        DateTimeImmutable::class => new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00'),
-    ];
+        $data = [
+            DateTimeInterface::class => new DateTime('1979-05-27T00:32:00.999999-07:00'),
+            DateTimeImmutable::class => new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00'),
+        ];
 
-    expect(toml_encode($data))->toEqual($expected);
+        expect(toml_encode($data))->toEqual($expected);
 
-    $data = new stdClass;
-    $data->{DateTimeInterface::class} = new DateTime('1979-05-27T00:32:00.999999-07:00');
-    $data->{DateTimeImmutable::class} = new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00');
+        $data = new stdClass;
+        $data->{DateTimeInterface::class} = new DateTime('1979-05-27T00:32:00.999999-07:00');
+        $data->{DateTimeImmutable::class} = new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00');
 
-    expect(toml_encode($data))->toEqual($expected);
-});
+        expect(toml_encode($data))->toEqual($expected);
+    });

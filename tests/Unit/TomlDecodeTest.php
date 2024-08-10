@@ -1,7 +1,13 @@
 <?php
 
-it('can decode toml', function () {
-    $json = <<<'JSON'
+use Devium\Toml\TomlError;
+
+it('can decode toml',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $json = <<<'JSON'
 {
   "title": "TOML Example",
   "owner": {
@@ -60,7 +66,7 @@ it('can decode toml', function () {
   ]
 }
 JSON;
-    $toml = <<<'TOML_WRAP'
+        $toml = <<<'TOML_WRAP'
 # This is a TOML document
 
 title = "TOML Example"
@@ -88,7 +94,7 @@ role = "backend"
 [[fruits]]
 name = "apple"
 
-[fruits.physical]  # subtable
+[fruits.physical]  # sub table
 color = "red"
 shape = "round"
 
@@ -105,6 +111,27 @@ name = "banana"
 [[fruits.varieties]]
 name = "plantain"
 TOML_WRAP;
-    expect(toml_decode($toml, false))->toEqual(json_decode($json, false));
-    expect(toml_decode($toml, true))->toEqual(json_decode($json, true));
-});
+        expect(toml_decode($toml))->toEqual(json_decode($json, false))
+            ->and(toml_decode($toml, true))->toEqual(json_decode($json, true));
+    });
+
+it('can decode TOML datetime formats',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $toml = <<<'TOML'
+DateTimeInterface = 1979-05-27T07:32:00.999Z
+DateTimeImmutable = 1979-05-27T07:32:00.999Z
+TOML;
+
+        $data = [
+            DateTimeInterface::class => new DateTime('1979-05-27T07:32:00.999'),
+            DateTimeImmutable::class => new DateTimeImmutable('1979-05-27T07:32:00.999'),
+        ];
+
+        $expected = (object) $data;
+
+        expect(toml_decode($toml))->toEqual($expected)
+            ->and(toml_decode($toml, true))->toEqual($data);
+    });

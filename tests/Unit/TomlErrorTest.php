@@ -2,8 +2,12 @@
 
 use Devium\Toml\TomlError;
 
-it('shows code block and caret', function () {
-    $toml = <<<'TOML_WRAP'
+it('shows code block and caret',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $toml = <<<'TOML_WRAP'
 # This is a TOML document
 
 title = "TOML Example"
@@ -19,7 +23,7 @@ data = [ ["delta", "phi"], [3.14] ]
 temp_targets = { cpu = 79.5, case = 72.0 }
 TOML_WRAP;
 
-    $message = <<<'MESSAGE'
+        $message = <<<'MESSAGE'
 Invalid TOML document: unexpected non-numeric value
 
 5:  [owner]
@@ -28,5 +32,5 @@ Invalid TOML document: unexpected non-numeric value
 7:  dob = 1979-05-31T07:32:00-08:00
 MESSAGE;
 
-    expect(static fn () => toml_decode($toml, true))->toThrow(TomlError::class, $message);
-});
+        expect(static fn () => toml_decode($toml, true))->toThrow(TomlError::class, $message);
+    });
