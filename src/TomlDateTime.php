@@ -3,11 +3,10 @@
 namespace Devium\Toml;
 
 use DateTimeImmutable;
-use JsonSerializable;
 use Stringable;
 use Throwable;
 
-class TomlDateTime extends DateTimeImmutable implements JsonSerializable, Stringable, TomlDateTimeInterface
+class TomlDateTime extends DateTimeImmutable implements Stringable, TomlDateTimeInterface
 {
     public const REGEX = '/(\d{4})(-(0[1-9]|1[0-2])(-([12]\d|0[1-9]|3[01]))([Tt\s]((([01]\d|2[0-3])((:)[0-5]\d))(:\d+)?)?(:[0-5]\d([.]\d+)?)?([zZ]|([+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)$/';
 
@@ -30,10 +29,5 @@ class TomlDateTime extends DateTimeImmutable implements JsonSerializable, String
     public function __toString(): string
     {
         return TomlInternalDateTime::toTOMLString($this);
-    }
-
-    public function jsonSerialize(): string
-    {
-        return $this;
     }
 }
