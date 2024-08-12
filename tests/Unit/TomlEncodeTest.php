@@ -133,3 +133,52 @@ EXPECTED;
         expect(toml_encode($data))->toEqual($expected)
             ->and(toml_encode((object) $data))->toEqual($expected);
     });
+
+it('can skip null values for tables',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $expected = <<<'EXPECTED'
+list = [ 1, 2, 3, 4 ]
+
+[keyValue]
+a = 1
+b = 2
+d = 4
+e = 5
+EXPECTED;
+
+        $data = [
+            'nullValue' => null,
+            'list' => [1, 2, 3, 4],
+            'keyValue' => [
+                'a' => 1,
+                'b' => 2,
+                'c' => null,
+                'd' => 4,
+                'e' => 5,
+            ],
+        ];
+
+        expect(toml_encode($data))->toEqual($expected);
+
+        $data = [
+            'nullValue' => null,
+            'list' => [1, 2, 3, 4],
+            'keyValue' => (object) [
+                'a' => 1,
+                'b' => 2,
+                'c' => null,
+                'd' => 4,
+                'e' => 5,
+            ],
+        ];
+
+        expect(toml_encode((object) $data))->toEqual($expected);
+    });
+
+it('cannot support arrays contain null values', function () {
+    expect(static fn () => toml_encode(['list' => [1, 2, null, 3, 4]]))
+        ->toThrow(TomlError::class, 'arrays cannot contain null values');
+});

@@ -49,10 +49,6 @@ readonly class TomlEncoder
 
     protected static function extendedTypeOf(mixed $obj): string
     {
-        if (is_null($obj)) {
-            return 'null';
-        }
-
         if ($obj instanceof TomlDateTimeInterface) {
             return 'date';
         }
@@ -95,10 +91,6 @@ readonly class TomlEncoder
     {
         if ($type === null) {
             $type = self::extendedTypeOf($value);
-        }
-
-        if ($type === 'null') {
-            return '';
         }
 
         if ($type === 'integer' || $type === 'double') {
@@ -218,21 +210,23 @@ readonly class TomlEncoder
         $tables = '';
         $keys = array_keys((array) $obj);
         foreach ($keys as $k) {
-            $type = self::extendedTypeOf($obj->{$k});
-            $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
-            if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
-                $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
-            } else {
-                if ($type === 'object') {
-                    $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
-                    $tables .= "[$tblKey]\n";
-                    $tables .= self::stringifyTable($obj->{$k}, $tblKey);
-                    $tables .= "\n\n";
+            if ($obj->{$k} !== null) {
+                $type = self::extendedTypeOf($obj->{$k});
+                $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
+                if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
+                    $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
                 } else {
-                    $preamble .= $key;
-                    $preamble .= ' = ';
-                    $preamble .= self::stringifyValue($obj->{$k}, $type);
-                    $preamble .= "\n";
+                    if ($type === 'object') {
+                        $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
+                        $tables .= "[$tblKey]\n";
+                        $tables .= self::stringifyTable($obj->{$k}, $tblKey);
+                        $tables .= "\n\n";
+                    } else {
+                        $preamble .= $key;
+                        $preamble .= ' = ';
+                        $preamble .= self::stringifyValue($obj->{$k}, $type);
+                        $preamble .= "\n";
+                    }
                 }
             }
         }
