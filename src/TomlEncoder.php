@@ -147,7 +147,7 @@ readonly class TomlEncoder
             return self::stringifyArray($value);
         }
 
-        throw new TomlError('unrecognized type'.$type);
+        throw new TomlError('unrecognized type: '.$type);
     }
 
     /**
