@@ -49,6 +49,10 @@ readonly class TomlEncoder
 
     protected static function extendedTypeOf(mixed $obj): string
     {
+        if (is_null($obj)) {
+            return 'null';
+        }
+
         if ($obj instanceof TomlDateTimeInterface) {
             return 'date';
         }
@@ -91,6 +95,10 @@ readonly class TomlEncoder
     {
         if ($type === null) {
             $type = self::extendedTypeOf($value);
+        }
+
+        if ($type === 'null') {
+            return '';
         }
 
         if ($type === 'integer' || $type === 'double') {
@@ -139,7 +147,7 @@ readonly class TomlEncoder
             return self::stringifyArray($value);
         }
 
-        throw new TomlError('unrecognized type');
+        throw new TomlError('unrecognized type'.$type);
     }
 
     /**
