@@ -19,16 +19,18 @@ final class TomlError extends Exception
     ) {
         if ($position < 0) {
             parent::__construct($message);
-        } else {
-            [$line, $column] = $this->getLineColFromPosition($toml, $position);
-            $codeBlock = $this->makeCodeBlock($toml, $line, $column);
 
-            $this->tomlLine = $line;
-            $this->tomlColumn = $column;
-            $this->tomlCodeBlock = $codeBlock;
-
-            parent::__construct("Invalid TOML document: $message\n\n$codeBlock");
+            return;
         }
+
+        [$line, $column] = $this->getLineColFromPosition($toml, $position);
+        $codeBlock = $this->makeCodeBlock($toml, $line, $column);
+
+        $this->tomlLine = $line;
+        $this->tomlColumn = $column;
+        $this->tomlCodeBlock = $codeBlock;
+
+        parent::__construct("Invalid TOML document: $message\n\n$codeBlock");
     }
 
     protected function getLineColFromPosition($string, $position): array
@@ -51,14 +53,10 @@ final class TomlError extends Exception
                 continue;
             }
 
-            $codeBlock .= str_pad($i, $numberLen);
-            $codeBlock .= ':  ';
-            $codeBlock .= $l;
-            $codeBlock .= "\n";
+            $codeBlock .= str_pad($i, $numberLen).":  $l\n";
 
             if ($i === $line) {
-                $codeBlock .= ' '.str_repeat(' ', $numberLen + $column + 2);
-                $codeBlock .= "^\n";
+                $codeBlock .= ' '.str_repeat(' ', $numberLen + $column + 2)."^\n";
             }
         }
 

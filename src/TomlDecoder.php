@@ -41,6 +41,10 @@ readonly class TomlDecoder
             return $object;
         }
 
+        if ($object instanceof TomlInternalDateTime) {
+            return $object;
+        }
+
         if (is_array($object)) {
             $return = [];
             foreach ($object as $key => $value) {

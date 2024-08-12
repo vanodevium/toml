@@ -38,14 +38,107 @@ This library tries to parse TOML datetime formats into next variants (according 
 -   `Devium\Toml\TomlLocalDate` (for the [local date](https://toml.io/en/v1.0.0#local-date))
 -   `Devium\Toml\TomlLocalTime` (for the [local time](https://toml.io/en/v1.0.0#local-time))
 
+Example:
+
+```toml
+
+offset-date-time-1 = 1979-05-27T07:32:00Z
+offset-date-time-2 = 1979-05-27T00:32:00-07:00
+offset-date-time-3 = 1979-05-27T00:32:00.999999-07:00
+offset-date-time-4 = 1979-05-27 07:32:00Z
+
+local-date-time-1 = 1979-05-27T07:32:00
+local-date-time-2 = 1979-05-27T00:32:00.999999
+
+local-date-1 = 1979-05-27
+
+local-time-1 = 07:32:00
+local-time-2 = 00:32:00.999999
+
+```
+
+If you use
+
+```php
+dump(toml_decode($toml, true));
+```
+
+TOML will be parsed into array
+
+```php
+array:9 [
+  "offset-date-time-1" => Devium\Toml\TomlDateTime @296638320 {#29
+    date: 1979-05-27 07:32:00.0 +00:00
+  }
+  "offset-date-time-2" => Devium\Toml\TomlDateTime @296638320 {#35
+    date: 1979-05-27 00:32:00.0 -07:00
+  }
+  "offset-date-time-3" => Devium\Toml\TomlDateTime @296638320 {#41
+    date: 1979-05-27 00:32:00.999999 -07:00
+  }
+  "offset-date-time-4" => Devium\Toml\TomlDateTime @296638320 {#47
+    date: 1979-05-27 07:32:00.0 +00:00
+  }
+  "local-date-time-1" => Devium\Toml\TomlLocalDateTime {#55
+    +year: 1979
+    +month: 5
+    +day: 27
+    +hour: 7
+    +minute: 32
+    +second: 0
+    +millisecond: 0
+  }
+  "local-date-time-2" => Devium\Toml\TomlLocalDateTime {#61
+    +year: 1979
+    +month: 5
+    +day: 27
+    +hour: 0
+    +minute: 32
+    +second: 0
+    +millisecond: 999
+  }
+  "local-date-1" => Devium\Toml\TomlLocalDate {#59
+    +year: 1979
+    +month: 5
+    +day: 27
+  }
+  "local-time-1" => Devium\Toml\TomlLocalTime {#70
+    +millisecond: 0
+    +hour: 7
+    +minute: 32
+    +second: 0
+  }
+  "local-time-2" => Devium\Toml\TomlLocalTime {#77
+    +millisecond: 999
+    +hour: 0
+    +minute: 32
+    +second: 0
+  }
+]
+```
+
 Each class implements `Stringable` interface.
 
-`TomlLocal*` classes implement `TomlDateTimeInterface` for usability.
-Each class has public properties.
+`TomlLocal*` classes are marked with `TomlDateTimeInterface` for usability. Each class has public properties.
 
 There is `TomlDateTime` class to support TOML offset date time format also.
 
 Of course any `DateTimeInterface` or `TomlDateTimeInterface` are encoded into TOML datetime string.
+So
+
+```
+$data = [
+    'DateTimeInterface' => new DateTimeImmutable('1979-05-27T07:32:00Z'),
+    'TomlDateTimeInterface' => new TomlDateTime('1979-05-27T07:32:00Z'),
+];
+```
+
+will be encoded into
+
+```toml
+DateTimeInterface = 1979-05-27T07:32:00.000Z
+TomlDateTimeInterface = 1979-05-27T07:32:00.000Z
+```
 
 ### About informative errors
 
