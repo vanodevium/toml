@@ -28,13 +28,13 @@ final class TomlLocalTime extends TomlInternalDateTime
         [$hour, $minute] = array_map('intval', array_slice($components, 0, 2));
         $p = array_map('intval', explode('.', $components[2]));
         $second = $p[0];
-        $millisecond = $p[1] ?? NAN;
+        $millisecond = $p[1] ?? 0;
 
         if (! self::isHour($hour) || ! self::isMinute($minute) || ! self::isSecond($second)) {
             throw new TomlError("invalid local time format \"$value\"");
         }
 
-        return new self($hour, $minute, $second, is_nan($millisecond) ? 0 : $millisecond);
+        return new self($hour, $minute, $second, $millisecond);
     }
 
     public function __toString(): string
