@@ -1,6 +1,6 @@
 {
     "name": "devium/toml",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "A PHP encoder/decoder for TOML",
     "keywords": ["php", "toml"],
     "type": "library",

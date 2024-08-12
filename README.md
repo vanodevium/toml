@@ -4,10 +4,10 @@
 
 ---
 
-[![Build status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.2)](https://github.com/vanodevium/toml)
-[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.2)](https://packagist.org/packages/devium/toml)
-[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.2)](https://packagist.org/packages/devium/toml)
-[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.2)](https://packagist.org/packages/devium/toml)
+[![Build status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.3)](https://github.com/vanodevium/toml)
+[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.3)](https://packagist.org/packages/devium/toml)
+[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.3)](https://packagist.org/packages/devium/toml)
+[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.3)](https://packagist.org/packages/devium/toml)
 
 # Devium\Toml
 
@@ -155,6 +155,14 @@ Invalid TOML document: unexpected non-numeric value
 ```
 
 Else it has message about whole input.
+
+### About NULL
+
+**TOML does not support null values.**
+
+If the array contains a null value, an exception will be thrown.
+
+The only thing possible is a null value for the keys in the tables. Such keys are simply skipped during encoding.
 
 ## Installation
 
