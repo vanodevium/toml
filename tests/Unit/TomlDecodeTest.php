@@ -2,12 +2,12 @@
 
 use Devium\Toml\TomlError;
 
-it('can decode toml',
+it('can decode TOML',
     /**
      * @throws TomlError
      */
     function () {
-        $json = <<<'JSON'
+        $json = <<<'JSON_STRING'
 {
   "title": "TOML Example",
   "owner": {
@@ -65,8 +65,9 @@ it('can decode toml',
     }
   ]
 }
-JSON;
-        $toml = <<<'TOML_WRAP'
+JSON_STRING;
+
+        $toml = <<<'TOML_STRING'
 # This is a TOML document
 
 title = "TOML Example"
@@ -110,7 +111,8 @@ name = "banana"
 
 [[fruits.varieties]]
 name = "plantain"
-TOML_WRAP;
+TOML_STRING;
+
         expect(toml_decode($toml))->toEqual(json_decode($json, false))
             ->and(toml_decode($toml, true))->toEqual(json_decode($json, true));
     });
@@ -120,18 +122,39 @@ it('can decode TOML datetime formats',
      * @throws TomlError
      */
     function () {
-        $toml = <<<'TOML'
+        $toml = <<<'TOML_STRING'
 DateTimeInterface = 1979-05-27T07:32:00.999Z
 DateTimeImmutable = 1979-05-27T07:32:00.999Z
-TOML;
+TOML_STRING;
 
         $data = [
             DateTimeInterface::class => new DateTime('1979-05-27T07:32:00.999'),
             DateTimeImmutable::class => new DateTimeImmutable('1979-05-27T07:32:00.999'),
         ];
 
-        $expected = (object) $data;
+        expect(toml_decode($toml))->toEqual((object) $data)
+            ->and(toml_decode($toml, true))->toEqual($data);
+    });
 
-        expect(toml_decode($toml))->toEqual($expected)
+it('can decode float',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $toml = <<<'TOML_STRING'
+float1 = 3.14
+float2 = "3.14"
+float3 = 1.0
+float4 = "1.0"
+TOML_STRING;
+
+        $data = [
+            'float1' => 3.14,
+            'float2' => 3.14,
+            'float3' => 1.0,
+            'float4' => 1.0,
+        ];
+
+        expect(toml_decode($toml))->toEqual((object) $data)
             ->and(toml_decode($toml, true))->toEqual($data);
     });

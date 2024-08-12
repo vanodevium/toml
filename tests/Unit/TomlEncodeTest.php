@@ -2,12 +2,12 @@
 
 use Devium\Toml\TomlError;
 
-it('can encode toml',
+it('can encode TOML',
     /**
      * @throws TomlError
      */
     function () {
-        $json = <<<'JSON'
+        $json = <<<'JSON_STRING'
 {
   "title": "TOML Example",
   "owner": {
@@ -65,8 +65,9 @@ it('can encode toml',
     }
   ]
 }
-JSON;
-        $toml = <<<'TOML_WRAP'
+JSON_STRING;
+
+        $toml = <<<'TOML_STRING'
 title = "TOML Example"
 
 [owner]
@@ -109,7 +110,7 @@ name = "banana"
 
 [[fruits.varieties]]
 name = "plantain"
-TOML_WRAP;
+TOML_STRING;
         expect(toml_encode(json_decode($json, false)))->toEqual($toml)
             ->and(toml_encode(json_decode($json, true)))->toEqual($toml);
     });
@@ -129,11 +130,6 @@ EXPECTED;
             DateTimeImmutable::class => new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00'),
         ];
 
-        expect(toml_encode($data))->toEqual($expected);
-
-        $data = new stdClass;
-        $data->{DateTimeInterface::class} = new DateTime('1979-05-27T00:32:00.999999-07:00');
-        $data->{DateTimeImmutable::class} = new DateTimeImmutable('1979-05-27T00:32:00.999999-07:00');
-
-        expect(toml_encode($data))->toEqual($expected);
+        expect(toml_encode($data))->toEqual($expected)
+            ->and(toml_encode((object) $data))->toEqual($expected);
     });
