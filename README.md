@@ -126,7 +126,7 @@ There is `TomlDateTime` class to support TOML offset date time format also.
 Of course any `DateTimeInterface` or `TomlDateTimeInterface` are encoded into TOML datetime string.
 So
 
-```
+```php
 $data = [
     'DateTimeInterface' => new DateTimeImmutable('1979-05-27T07:32:00Z'),
     'TomlDateTimeInterface' => new TomlDateTime('1979-05-27T07:32:00Z'),
