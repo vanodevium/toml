@@ -7,5 +7,5 @@ namespace Devium\Toml\Nodes;
  */
 final class FloatNode implements Node
 {
-    public function __construct(public float|string $value) {}
+    public function __construct(public readonly float|string $value) {}
 }

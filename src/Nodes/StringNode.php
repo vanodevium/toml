@@ -7,5 +7,5 @@ namespace Devium\Toml\Nodes;
  */
 final class StringNode implements Node
 {
-    public function __construct(public string $value) {}
+    public function __construct(public readonly string $value) {}
 }

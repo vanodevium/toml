@@ -11,7 +11,7 @@ final class TomlInputIterator
 
     public int $pos = -1;
 
-    public function __construct(public string $input) {}
+    public function __construct(public readonly string $input) {}
 
     public function take(...$chars): bool
     {

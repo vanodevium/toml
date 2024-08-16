@@ -8,7 +8,7 @@ namespace Devium\Toml\Nodes;
 final class KeyValuePairNode implements Node
 {
     public function __construct(
-        public KeyNode $key,
-        public StringNode|IntegerNode|FloatNode|BooleanNode|OffsetDateTimeNode|LocalDateTimeNode|LocalDateNode|LocalTimeNode|ArrayNode|InlineTableNode $value
+        public readonly KeyNode $key,
+        public readonly StringNode|IntegerNode|FloatNode|BooleanNode|OffsetDateTimeNode|LocalDateTimeNode|LocalDateNode|LocalTimeNode|ArrayNode|InlineTableNode $value
     ) {}
 }

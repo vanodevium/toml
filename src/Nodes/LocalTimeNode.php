@@ -9,5 +9,5 @@ use Devium\Toml\TomlLocalTime;
  */
 final class LocalTimeNode implements Node
 {
-    public function __construct(public TomlLocalTime $value) {}
+    public function __construct(public readonly TomlLocalTime $value) {}
 }

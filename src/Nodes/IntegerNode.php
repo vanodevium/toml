@@ -7,5 +7,5 @@ namespace Devium\Toml\Nodes;
  */
 final class IntegerNode implements Node
 {
-    public function __construct(public int $value) {}
+    public function __construct(public readonly int $value) {}
 }

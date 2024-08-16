@@ -7,7 +7,11 @@ namespace Devium\Toml;
  */
 final class TomlToken
 {
-    public function __construct(public string $type, public mixed $value = null, public bool $isMultiline = false) {}
+    public function __construct(
+        public readonly string $type,
+        public readonly mixed $value = null,
+        public readonly bool $isMultiline = false
+    ) {}
 
     public static function fromArray(array $from): self
     {

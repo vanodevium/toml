@@ -9,5 +9,5 @@ use Devium\Toml\TomlDateTime;
  */
 final class OffsetDateTimeNode implements Node
 {
-    public function __construct(public TomlDateTime $value) {}
+    public function __construct(public readonly TomlDateTime $value) {}
 }

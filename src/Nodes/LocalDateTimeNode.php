@@ -9,5 +9,5 @@ use Devium\Toml\TomlLocalDateTime;
  */
 final class LocalDateTimeNode implements Node
 {
-    public function __construct(public TomlLocalDateTime $value) {}
+    public function __construct(public readonly TomlLocalDateTime $value) {}
 }

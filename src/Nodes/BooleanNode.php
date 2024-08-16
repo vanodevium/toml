@@ -7,5 +7,5 @@ namespace Devium\Toml\Nodes;
  */
 final class BooleanNode implements Node
 {
-    public function __construct(public bool $value) {}
+    public function __construct(public readonly bool $value) {}
 }
