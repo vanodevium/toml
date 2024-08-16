@@ -11,7 +11,12 @@ final class TomlInputIterator
 
     public int $pos = -1;
 
-    public function __construct(public readonly string $input) {}
+    private readonly int $inputLength;
+
+    public function __construct(public readonly string $input)
+    {
+        $this->inputLength = strlen($this->input);
+    }
 
     public function take(...$chars): bool
     {
@@ -36,9 +41,10 @@ final class TomlInputIterator
 
     public function next(): string
     {
-        if ($this->pos + 1 === strlen($this->input)) {
+        if ($this->isEOF()) {
             return self::EOF;
         }
+
         $this->pos++;
         $char = $this->input[$this->pos];
         if ($char === "\r" && $this->input[$this->pos + 1] === "\n") {
@@ -52,6 +58,6 @@ final class TomlInputIterator
 
     public function isEOF(): bool
     {
-        return $this->pos + 1 === strlen($this->input);
+        return $this->pos + 1 === $this->inputLength;
     }
 }

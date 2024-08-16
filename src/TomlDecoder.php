@@ -24,17 +24,6 @@ class TomlDecoder
         return self::toObject(TomlNormalizer::normalize($parser->parse()));
     }
 
-    protected static function toObject(array|TomlObject $arrayObject): array|object
-    {
-        $return = [];
-
-        foreach ($arrayObject as $key => $value) {
-            $return[$key] = $value instanceof TomlObject || is_array($value) ? self::toObject($value) : $value;
-        }
-
-        return is_array($arrayObject) ? $return : (object) $return;
-    }
-
     protected static function toArray(mixed $object): mixed
     {
         if ($object instanceof DateTimeInterface) {
@@ -64,5 +53,16 @@ class TomlDecoder
         }
 
         return $object;
+    }
+
+    protected static function toObject(array|TomlObject $arrayObject): array|object
+    {
+        $return = [];
+
+        foreach ($arrayObject as $key => $value) {
+            $return[$key] = $value instanceof TomlObject || is_array($value) ? self::toObject($value) : $value;
+        }
+
+        return is_array($arrayObject) ? $return : (object) $return;
     }
 }

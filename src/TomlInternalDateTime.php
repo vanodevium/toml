@@ -32,6 +32,11 @@ abstract class TomlInternalDateTime implements Stringable, TomlDateTimeInterface
         return $day <= (self::isLeap($year) ? 29 : 28);
     }
 
+    protected static function isLeap(int $year): bool
+    {
+        return ($year % 4 === 0 && $year % 100 !== 0) || $year % 400 === 0;
+    }
+
     protected static function isYear(int $value): bool
     {
         return $value >= 0 && $value <= 9999;
@@ -62,15 +67,10 @@ abstract class TomlInternalDateTime implements Stringable, TomlDateTimeInterface
         return $value >= 0 && $value < 60;
     }
 
-    protected static function isLeap(int $year): bool
-    {
-        return ($year % 4 === 0 && $year % 100 !== 0) || $year % 400 === 0;
-    }
+    abstract public function __toString(): string;
 
     protected function zeroPad(int $int, int $len = 2): string
     {
         return str_pad((string) $int, $len, '0', STR_PAD_LEFT);
     }
-
-    abstract public function __toString(): string;
 }

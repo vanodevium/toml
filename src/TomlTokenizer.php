@@ -40,14 +40,16 @@ final class TomlTokenizer
         $this->iterator = new TomlInputIterator($this->validateInput($input));
     }
 
-    public function getInput(): string
+    /**
+     * @throws TomlError
+     */
+    protected function validateInput(string $input): string
     {
-        return $this->iterator->input;
-    }
+        if (preg_match('/("""\n?.*\\\\ )|(\\\\ .*\n?""")/', $input)) {
+            throw new TomlError('unexpected \\<space> escaping');
+        }
 
-    public function getPosition(): int
-    {
-        return $this->iterator->pos;
+        return $input;
     }
 
     /**
@@ -119,32 +121,6 @@ final class TomlTokenizer
         };
     }
 
-    /**
-     * @throws TomlError
-     */
-    public function sequence(...$types): array
-    {
-        return array_map(fn ($type) => $this->expect($type), $types);
-    }
-
-    /**
-     * @throws TomlError
-     */
-    public function expect($type): TomlToken
-    {
-        $token = $this->next();
-        if ($token->type !== $type) {
-            throw new TomlError('unexpected token type: '.$token->type);
-        }
-
-        return $token;
-    }
-
-    public function isEOF(): bool
-    {
-        return $this->iterator->isEOF();
-    }
-
     protected function isPunctuatorOrNewline($char): bool
     {
         return array_key_exists($char, self::PUNCTUATOR_OR_NEWLINE_TOKENS);
@@ -176,6 +152,16 @@ final class TomlTokenizer
         ]);
     }
 
+    public function getInput(): string
+    {
+        return $this->iterator->input;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->iterator->pos;
+    }
+
     protected function scanWhitespace($start): TomlToken
     {
         while ($this->isWhitespace($this->iterator->peek())) {
@@ -205,6 +191,11 @@ final class TomlTokenizer
         }
 
         return $this->returnScan('COMMENT', $start);
+    }
+
+    public function isEOF(): bool
+    {
+        return $this->iterator->isEOF();
     }
 
     protected function isControlCharacterOtherThanTab($char): bool
@@ -362,12 +353,21 @@ final class TomlTokenizer
     /**
      * @throws TomlError
      */
-    protected function validateInput(string $input): string
+    public function sequence(...$types): array
     {
-        if (preg_match('/("""\n?.*\\\\ )|(\\\\ .*\n?""")/', $input)) {
-            throw new TomlError('unexpected \\<space> escaping');
+        return array_map(fn ($type) => $this->expect($type), $types);
+    }
+
+    /**
+     * @throws TomlError
+     */
+    public function expect($type): TomlToken
+    {
+        $token = $this->next();
+        if ($token->type !== $type) {
+            throw new TomlError('unexpected token type: '.$token->type);
         }
 
-        return $input;
+        return $token;
     }
 }

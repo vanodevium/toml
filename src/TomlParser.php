@@ -343,7 +343,7 @@ final class TomlParser
             default => null,
         };
 
-        if ($result instanceof \Devium\Toml\Nodes\FloatNode) {
+        if ($result instanceof FloatNode) {
             return $result;
         }
 

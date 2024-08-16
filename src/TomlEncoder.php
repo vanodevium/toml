@@ -68,6 +68,42 @@ class TomlEncoder
         return gettype($obj);
     }
 
+    /**
+     * @throws TomlError
+     */
+    protected static function stringifyTable(object $obj, string $prefix = ''): string
+    {
+        $preamble = '';
+        $tables = '';
+        $keys = array_keys((array) $obj);
+        foreach ($keys as $k) {
+            if ($obj->{$k} !== null) {
+                $type = self::extendedTypeOf($obj->{$k});
+                $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
+                if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
+                    $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
+                } elseif ($type === 'object') {
+                    $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
+                    $tables .= "[$tblKey]\n";
+                    $tables .= self::stringifyTable($obj->{$k}, $tblKey);
+                    $tables .= "\n\n";
+                } else {
+                    $preamble .= $key;
+                    $preamble .= ' = ';
+                    $preamble .= self::stringifyValue($obj->{$k}, $type);
+                    $preamble .= "\n";
+                }
+            }
+        }
+
+        return trim("$preamble\n$tables");
+    }
+
+    protected static function formatString(string $s): string
+    {
+        return preg_replace('/\x7f/', '\\u007f', json_encode($s, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
     protected static function isArrayOfTables(array $obj): bool
     {
         foreach ($obj as $item) {
@@ -79,9 +115,19 @@ class TomlEncoder
         return $obj !== [];
     }
 
-    protected static function formatString(string $s): string
+    /**
+     * @throws TomlError
+     */
+    protected static function stringifyArrayTable(array $array, string $key): string
     {
-        return preg_replace('/\x7f/', '\\u007f', json_encode($s, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $res = '';
+        foreach ($array as $item) {
+            $res .= "[[$key]]\n";
+            $res .= self::stringifyTable($item, $key);
+            $res .= "\n\n";
+        }
+
+        return $res;
     }
 
     /**
@@ -184,51 +230,5 @@ class TomlEncoder
         }
 
         return $res.' ]';
-    }
-
-    /**
-     * @throws TomlError
-     */
-    protected static function stringifyArrayTable(array $array, string $key): string
-    {
-        $res = '';
-        foreach ($array as $item) {
-            $res .= "[[$key]]\n";
-            $res .= self::stringifyTable($item, $key);
-            $res .= "\n\n";
-        }
-
-        return $res;
-    }
-
-    /**
-     * @throws TomlError
-     */
-    protected static function stringifyTable(object $obj, string $prefix = ''): string
-    {
-        $preamble = '';
-        $tables = '';
-        $keys = array_keys((array) $obj);
-        foreach ($keys as $k) {
-            if ($obj->{$k} !== null) {
-                $type = self::extendedTypeOf($obj->{$k});
-                $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
-                if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
-                    $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
-                } elseif ($type === 'object') {
-                    $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
-                    $tables .= "[$tblKey]\n";
-                    $tables .= self::stringifyTable($obj->{$k}, $tblKey);
-                    $tables .= "\n\n";
-                } else {
-                    $preamble .= $key;
-                    $preamble .= ' = ';
-                    $preamble .= self::stringifyValue($obj->{$k}, $type);
-                    $preamble .= "\n";
-                }
-            }
-        }
-
-        return trim("$preamble\n$tables");
     }
 }
