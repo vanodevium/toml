@@ -7,7 +7,7 @@ use Devium\Toml\TomlLocalDateTime;
 /**
  * @internal
  */
-final readonly class LocalDateTimeNode implements Node
+final class LocalDateTimeNode implements Node
 {
     public function __construct(public TomlLocalDateTime $value) {}
 }

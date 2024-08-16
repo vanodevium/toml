@@ -4,7 +4,7 @@ namespace Devium\Toml;
 
 use stdClass;
 
-readonly class Toml
+class Toml
 {
     /**
      * @throws TomlError

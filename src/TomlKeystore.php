@@ -13,15 +13,15 @@ use Ds\Set;
 /**
  * @internal
  */
-final readonly class TomlKeystore
+final class TomlKeystore
 {
-    private Set $keys;
+    private readonly Set $keys;
 
-    private Set $tables;
+    private readonly Set $tables;
 
     private Set $arrayTables;
 
-    private Set $implicitTables;
+    private readonly Set $implicitTables;
 
     public function __construct()
     {
@@ -64,8 +64,9 @@ final readonly class TomlKeystore
         }
 
         $components = $this->makeKeyComponents($node->key);
+        $counter = count($components);
 
-        for ($i = 0; $i < count($components); $i++) {
+        for ($i = 0; $i < $counter; $i++) {
             $component = $components[$i];
 
             $key .= ($i !== 0 ? '.' : '').$component;

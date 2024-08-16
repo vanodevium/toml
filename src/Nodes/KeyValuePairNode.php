@@ -5,7 +5,7 @@ namespace Devium\Toml\Nodes;
 /**
  * @internal
  */
-final readonly class KeyValuePairNode implements Node
+final class KeyValuePairNode implements Node
 {
     public function __construct(
         public KeyNode $key,

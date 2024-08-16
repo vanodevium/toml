@@ -8,7 +8,7 @@ use stdClass;
 /**
  * @internal
  */
-readonly class TomlEncoder
+class TomlEncoder
 {
     protected const BARE_KEY = '/^[a-z0-9-_]+$/i';
 
@@ -215,18 +215,16 @@ readonly class TomlEncoder
                 $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
                 if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
                     $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
+                } elseif ($type === 'object') {
+                    $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
+                    $tables .= "[$tblKey]\n";
+                    $tables .= self::stringifyTable($obj->{$k}, $tblKey);
+                    $tables .= "\n\n";
                 } else {
-                    if ($type === 'object') {
-                        $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
-                        $tables .= "[$tblKey]\n";
-                        $tables .= self::stringifyTable($obj->{$k}, $tblKey);
-                        $tables .= "\n\n";
-                    } else {
-                        $preamble .= $key;
-                        $preamble .= ' = ';
-                        $preamble .= self::stringifyValue($obj->{$k}, $type);
-                        $preamble .= "\n";
-                    }
+                    $preamble .= $key;
+                    $preamble .= ' = ';
+                    $preamble .= self::stringifyValue($obj->{$k}, $type);
+                    $preamble .= "\n";
                 }
             }
         }

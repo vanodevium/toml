@@ -312,8 +312,10 @@ final class TomlTokenizer
                                     continue 3;
                                 }
                                 if ($isMultiline && ($this->isWhitespace($char) || $char === "\n")) {
-                                    /** @noinspection PhpStatementHasEmptyBodyInspection */
-                                    while ($this->iterator->take(' ', "\t", "\n")) {
+                                    for (; ;) {
+                                        if (! $this->iterator->take(' ', "\t", "\n")) {
+                                            break;
+                                        }
                                     }
 
                                     continue 3;

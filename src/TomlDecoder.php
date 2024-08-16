@@ -8,7 +8,7 @@ use stdClass;
 /**
  * @internal
  */
-readonly class TomlDecoder
+class TomlDecoder
 {
     /**
      * @throws TomlError
