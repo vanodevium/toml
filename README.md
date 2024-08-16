@@ -4,10 +4,10 @@
 
 ---
 
-[![Build status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.3)](https://github.com/vanodevium/toml)
-[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.3)](https://packagist.org/packages/devium/toml)
-[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.3)](https://packagist.org/packages/devium/toml)
-[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.3)](https://packagist.org/packages/devium/toml)
+[![Build status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.4)](https://github.com/vanodevium/toml)
+[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.4)](https://packagist.org/packages/devium/toml)
+[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.4)](https://packagist.org/packages/devium/toml)
+[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.4)](https://packagist.org/packages/devium/toml)
 
 # Devium\Toml
 
