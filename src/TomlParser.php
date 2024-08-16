@@ -407,7 +407,8 @@ final class TomlParser
         }
 
         $isUnderscoreAllowed = false;
-        for (; $i < strlen((string) $value); $i++) {
+        $valueLength = strlen((string) $value);
+        for (; $i < $valueLength; $i++) {
             $char = $value[$i];
             if ($char === '_') {
                 if (! $isUnderscoreAllowed) {
