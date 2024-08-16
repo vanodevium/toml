@@ -52,7 +52,7 @@
     },
     "scripts": {
         "refacto": "rector",
-        "lint": "pint",
+        "pint": "pint",
         "test:refacto": "rector --dry-run",
         "test:lint": "pint --test",
         "test:types": "phpstan analyse --ansi src",
