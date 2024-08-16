@@ -2,7 +2,7 @@
     "name": "devium/toml",
     "version": "1.0.3",
     "description": "A PHP encoder/decoder for TOML",
-    "keywords": ["php", "toml"],
+    "keywords": ["toml", "parser", "encode", "decode"],
     "type": "library",
     "license": "MIT",
     "authors": [
