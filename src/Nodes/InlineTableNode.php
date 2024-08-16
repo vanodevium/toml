@@ -5,7 +5,7 @@ namespace Devium\Toml\Nodes;
 /**
  * @internal
  */
-final class InlineTableNode implements Node
+final class InlineTableNode implements Node, ValuableNode
 {
     /**
      * @param  KeyValuePairNode[]  $elements

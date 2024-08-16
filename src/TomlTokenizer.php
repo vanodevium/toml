@@ -8,16 +8,16 @@ namespace Devium\Toml;
 final class TomlTokenizer
 {
     protected const PUNCTUATOR_OR_NEWLINE_TOKENS = [
-        "\n" => 'NEWLINE',
-        '=' => 'EQUALS',
-        '.' => 'PERIOD',
-        ',' => 'COMMA',
-        ':' => 'COLON',
-        '+' => 'PLUS',
-        '{' => 'LEFT_CURLY_BRACKET',
-        '}' => 'RIGHT_CURLY_BRACKET',
-        '[' => 'LEFT_SQUARE_BRACKET',
-        ']' => 'RIGHT_SQUARE_BRACKET',
+        "\n" => TomlToken::NEWLINE,
+        '=' => TomlToken::EQUALS,
+        '.' => TomlToken::PERIOD,
+        ',' => TomlToken::COMMA,
+        ':' => TomlToken::COLON,
+        '+' => TomlToken::PLUS,
+        '{' => TomlToken::LEFT_CURLY_BRACKET,
+        '}' => TomlToken::RIGHT_CURLY_BRACKET,
+        '[' => TomlToken::LEFT_SQUARE_BRACKET,
+        ']' => TomlToken::RIGHT_SQUARE_BRACKET,
     ];
 
     protected const ESCAPES = [
@@ -116,7 +116,7 @@ final class TomlTokenizer
             '#' => $this->scanComment($start),
             "'" => $this->scanLiteralString(),
             '"' => $this->scanBasicString(),
-            TomlInputIterator::EOF => TomlToken::fromArray(['type' => 'EOF']),
+            TomlInputIterator::EOF => TomlToken::fromArray(['type' => TomlToken::EOF]),
             default => throw new TomlError('unexpected character: '.$char),
         };
     }
@@ -141,7 +141,7 @@ final class TomlTokenizer
             $this->iterator->next();
         }
 
-        return $this->returnScan('BARE', $start);
+        return $this->returnScan(TomlToken::BARE, $start);
     }
 
     protected function returnScan(string $type, $start): TomlToken
@@ -168,7 +168,7 @@ final class TomlTokenizer
             $this->iterator->next();
         }
 
-        return $this->returnScan('WHITESPACE', $start);
+        return $this->returnScan(TomlToken::WHITESPACE, $start);
     }
 
     protected function isWhitespace($char): bool
@@ -187,10 +187,10 @@ final class TomlTokenizer
                 continue;
             }
 
-            return $this->returnScan('COMMENT', $start);
+            return $this->returnScan(TomlToken::COMMENT, $start);
         }
 
-        return $this->returnScan('COMMENT', $start);
+        return $this->returnScan(TomlToken::COMMENT, $start);
     }
 
     public function isEOF(): bool
@@ -225,7 +225,7 @@ final class TomlTokenizer
         if ($this->iterator->take($delimiter)) {
             if (! $this->iterator->take($delimiter)) {
                 return TomlToken::fromArray([
-                    'type' => 'STRING',
+                    'type' => TomlToken::STRING,
                     'value' => '',
                     'isMultiline' => false,
                 ]);
@@ -322,7 +322,7 @@ final class TomlTokenizer
         }
 
         return TomlToken::fromArray([
-            'type' => 'STRING',
+            'type' => TomlToken::STRING,
             'value' => $value,
             'isMultiline' => $isMultiline,
         ]);

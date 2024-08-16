@@ -14,10 +14,13 @@ use Devium\Toml\Nodes\KeyValuePairNode;
 use Devium\Toml\Nodes\LocalDateNode;
 use Devium\Toml\Nodes\LocalDateTimeNode;
 use Devium\Toml\Nodes\LocalTimeNode;
+use Devium\Toml\Nodes\NumericNode;
 use Devium\Toml\Nodes\OffsetDateTimeNode;
 use Devium\Toml\Nodes\RootTableNode;
 use Devium\Toml\Nodes\StringNode;
 use Devium\Toml\Nodes\TableNode;
+use Devium\Toml\Nodes\TomlDateTimeNode;
+use Devium\Toml\Nodes\ValuableNode;
 use Throwable;
 
 /**
@@ -56,9 +59,9 @@ final class TomlParser
                     break;
                 }
 
-                $this->tokenizer->take('WHITESPACE');
-                $this->tokenizer->take('COMMENT');
-                $this->tokenizer->assert('NEWLINE', 'EOF');
+                $this->tokenizer->take(TomlToken::WHITESPACE);
+                $this->tokenizer->take(TomlToken::COMMENT);
+                $this->tokenizer->assert(TomlToken::NEWLINE, TomlToken::EOF);
                 $this->keystore->addNode($node);
                 if (in_array($node::class, [TableNode::class, ArrayTableNode::class])) {
                     $this->tableNode = $node;
@@ -87,8 +90,8 @@ final class TomlParser
         $token = $this->tokenizer->peek();
 
         return match ($token->type) {
-            'LEFT_SQUARE_BRACKET' => $this->table(),
-            'EOF' => null,
+            TomlToken::LEFT_SQUARE_BRACKET => $this->table(),
+            TomlToken::EOF => null,
             default => $this->keyValuePair(),
         };
     }
@@ -99,16 +102,16 @@ final class TomlParser
     protected function takeCommentsAndNewlines(): void
     {
         for (; ;) {
-            $this->tokenizer->take('WHITESPACE');
-            if ($this->tokenizer->take('COMMENT')) {
+            $this->tokenizer->take(TomlToken::WHITESPACE);
+            if ($this->tokenizer->take(TomlToken::COMMENT)) {
                 if ($this->tokenizer->isEOF()) {
                     break;
                 }
-                $this->tokenizer->assert('NEWLINE');
+                $this->tokenizer->assert(TomlToken::NEWLINE);
 
                 continue;
             }
-            if (! $this->tokenizer->take('NEWLINE')) {
+            if (! $this->tokenizer->take(TomlToken::NEWLINE)) {
                 break;
             }
         }
@@ -121,13 +124,13 @@ final class TomlParser
     {
         $this->tokenizer->next();
 
-        $isArrayTable = $this->tokenizer->take('LEFT_SQUARE_BRACKET');
+        $isArrayTable = $this->tokenizer->take(TomlToken::LEFT_SQUARE_BRACKET);
         $key = $this->key();
 
-        $this->tokenizer->assert('RIGHT_SQUARE_BRACKET');
+        $this->tokenizer->assert(TomlToken::RIGHT_SQUARE_BRACKET);
 
         if ($isArrayTable) {
-            $this->tokenizer->assert('RIGHT_SQUARE_BRACKET');
+            $this->tokenizer->assert(TomlToken::RIGHT_SQUARE_BRACKET);
         }
 
         return $isArrayTable ? new ArrayTableNode($key, []) : new TableNode($key, []);
@@ -141,16 +144,16 @@ final class TomlParser
         $keyNode = new KeyNode([]);
 
         do {
-            $this->tokenizer->take('WHITESPACE');
+            $this->tokenizer->take(TomlToken::WHITESPACE);
             $token = $this->tokenizer->next();
 
             switch ($token->type) {
-                case 'BARE':
+                case TomlToken::BARE:
                     $keyNode->addKey(new BareNode($token->value));
 
                     break;
 
-                case 'STRING':
+                case TomlToken::STRING:
                     if ($token->isMultiline) {
                         throw new TomlError('unexpected string value');
                     }
@@ -163,8 +166,8 @@ final class TomlParser
                     throw new TomlError('unexpected token type: '.$token->type);
             }
 
-            $this->tokenizer->take('WHITESPACE');
-        } while ($this->tokenizer->take('PERIOD'));
+            $this->tokenizer->take(TomlToken::WHITESPACE);
+        } while ($this->tokenizer->take(TomlToken::PERIOD));
 
         return $keyNode;
     }
@@ -176,8 +179,8 @@ final class TomlParser
     {
         $key = $this->key();
 
-        $this->tokenizer->assert('EQUALS');
-        $this->tokenizer->take('WHITESPACE');
+        $this->tokenizer->assert(TomlToken::EQUALS);
+        $this->tokenizer->take(TomlToken::WHITESPACE);
 
         return new KeyValuePairNode($key, $this->value());
     }
@@ -185,16 +188,16 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    protected function value(): StringNode|IntegerNode|FloatNode|BooleanNode|OffsetDateTimeNode|LocalDateTimeNode|LocalDateNode|LocalTimeNode|ArrayNode|InlineTableNode
+    protected function value(): ValuableNode
     {
         $token = $this->tokenizer->next();
 
         return match ($token->type) {
-            'STRING' => new StringNode($token->value),
-            'BARE' => $this->booleanOrNumberOrDateOrDateTimeOrTime($token->value),
-            'PLUS' => $this->plus(),
-            'LEFT_SQUARE_BRACKET' => $this->array(),
-            'LEFT_CURLY_BRACKET' => $this->inlineTable(),
+            TomlToken::STRING => new StringNode($token->value),
+            TomlToken::BARE => $this->booleanOrNumberOrDateOrDateTimeOrTime($token->value),
+            TomlToken::PLUS => $this->plus(),
+            TomlToken::LEFT_SQUARE_BRACKET => $this->array(),
+            TomlToken::LEFT_CURLY_BRACKET => $this->inlineTable(),
             default => throw new TomlError('unexpected token type: '.$token->type),
         };
     }
@@ -202,7 +205,7 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    protected function booleanOrNumberOrDateOrDateTimeOrTime(string $value): BooleanNode|OffsetDateTimeNode|LocalDateTimeNode|LocalDateNode|LocalTimeNode|IntegerNode|FloatNode
+    protected function booleanOrNumberOrDateOrDateTimeOrTime(string $value): BooleanNode|NumericNode|TomlDateTimeNode
     {
         if ($value === 'true' || $value === 'false') {
             return new BooleanNode($value === 'true');
@@ -211,7 +214,7 @@ final class TomlParser
         if (str_contains(substr($value, 1), '-') && ! str_contains($value, 'e-') && ! str_contains($value, 'E-')) {
             return $this->dateOrDateTime($value);
         }
-        if ($this->tokenizer->peek()->type === 'COLON') {
+        if ($this->tokenizer->peek()->type === TomlToken::COLON) {
             return $this->time($value);
         }
 
@@ -225,11 +228,11 @@ final class TomlParser
     {
         $token = $this->tokenizer->peek();
 
-        if ($token->type === 'WHITESPACE' && $token->value === ' ') {
+        if ($token->type === TomlToken::WHITESPACE && $token->value === ' ') {
             $this->tokenizer->next();
             $token = $this->tokenizer->peek();
 
-            if ($token->type !== 'BARE') {
+            if ($token->type !== TomlToken::BARE) {
                 return new LocalDateNode(TomlLocalDate::fromString($value));
             }
 
@@ -242,7 +245,7 @@ final class TomlParser
             return new LocalDateNode(TomlLocalDate::fromString($value));
         }
 
-        $tokens = $this->tokenizer->sequence('COLON', 'BARE', 'COLON', 'BARE');
+        $tokens = $this->tokenizer->sequence(TomlToken::COLON, TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
         $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
 
         if (
@@ -253,8 +256,8 @@ final class TomlParser
         }
 
         if (str_contains($tokens[count($tokens) - 1]->value, '-')) {
-            $this->tokenizer->assert('COLON');
-            $token = $this->tokenizer->expect('BARE');
+            $this->tokenizer->assert(TomlToken::COLON);
+            $token = $this->tokenizer->expect(TomlToken::BARE);
             $value .= ':';
             $value .= $token->value;
 
@@ -263,18 +266,18 @@ final class TomlParser
 
         $tokenType = $this->tokenizer->peek()->type;
 
-        if ($tokenType === 'PLUS') {
+        if ($tokenType === TomlToken::PLUS) {
             $this->tokenizer->next();
-            $tokens = $this->tokenizer->sequence('BARE', 'COLON', 'BARE');
+            $tokens = $this->tokenizer->sequence(TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
             $value .= '+';
             $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
 
             return new OffsetDateTimeNode($this->parseDate($value));
         }
 
-        if ($tokenType === 'PERIOD') {
+        if ($tokenType === TomlToken::PERIOD) {
             $this->tokenizer->next();
-            $token = $this->tokenizer->expect('BARE');
+            $token = $this->tokenizer->expect(TomlToken::BARE);
             $value .= '.';
             $value .= $token->value;
 
@@ -283,16 +286,16 @@ final class TomlParser
             }
 
             if (str_contains((string) $token->value, '-')) {
-                $this->tokenizer->assert('COLON');
-                $token = $this->tokenizer->expect('BARE');
+                $this->tokenizer->assert(TomlToken::COLON);
+                $token = $this->tokenizer->expect(TomlToken::BARE);
                 $value .= ':';
                 $value .= $token->value;
 
                 return new OffsetDateTimeNode($this->parseDate($value));
             }
 
-            if ($this->tokenizer->take('PLUS')) {
-                $tokens = $this->tokenizer->sequence('BARE', 'COLON', 'BARE');
+            if ($this->tokenizer->take(TomlToken::PLUS)) {
+                $tokens = $this->tokenizer->sequence(TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
                 $value .= '+';
                 $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
 
@@ -320,10 +323,10 @@ final class TomlParser
      */
     protected function time($value): LocalTimeNode
     {
-        $tokens = $this->tokenizer->sequence('COLON', 'BARE', 'COLON', 'BARE');
+        $tokens = $this->tokenizer->sequence(TomlToken::COLON, TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
         $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
-        if ($this->tokenizer->take('PERIOD')) {
-            $token = $this->tokenizer->expect('BARE');
+        if ($this->tokenizer->take(TomlToken::PERIOD)) {
+            $token = $this->tokenizer->expect(TomlToken::BARE);
             $value .= '.';
             $value .= $token->value;
         }
@@ -353,7 +356,7 @@ final class TomlParser
             str_starts_with((string) $value, '0b') => $this->integer($value, 2),
             str_contains((string) $value, 'e') => $this->float($value),
             str_contains((string) $value, 'E') => $this->float($value),
-            $this->tokenizer->peek()->type === 'PERIOD' => $this->float($value),
+            $this->tokenizer->peek()->type === TomlToken::PERIOD => $this->float($value),
             default => $this->integer($value, 10),
         };
     }
@@ -470,7 +473,7 @@ final class TomlParser
         $unparsed = $parsed['unparsed'];
         $sign = $parsed['sign'];
 
-        if ($this->tokenizer->take('PERIOD')) {
+        if ($this->tokenizer->take(TomlToken::PERIOD)) {
             if (preg_match('/^[+-]?0\d+/im', (string) $value)) {
                 throw new TomlError('unexpected float formatting');
             }
@@ -479,7 +482,7 @@ final class TomlParser
                 throw new TomlError('unexpected unparsed part of float value');
             }
 
-            $token = $this->tokenizer->expect('BARE');
+            $token = $this->tokenizer->expect(TomlToken::BARE);
             $result = $this->parseInteger($token->value, false, true, true, 10, true);
             if (! str_starts_with((string) $float, '+') && ! str_starts_with((string) $float, '-')) {
                 $float = "$sign$float";
@@ -504,8 +507,8 @@ final class TomlParser
             return new FloatNode((float) $float);
         }
 
-        $this->tokenizer->assert('PLUS');
-        $token = $this->tokenizer->expect('BARE');
+        $this->tokenizer->assert(TomlToken::PLUS);
+        $token = $this->tokenizer->expect(TomlToken::BARE);
         $float .= '+';
         $float .= $this->parseInteger($token->value, false, true, false, 10)['int'];
 
@@ -517,7 +520,7 @@ final class TomlParser
      */
     protected function plus(): FloatNode|IntegerNode
     {
-        $token = $this->tokenizer->expect('BARE');
+        $token = $this->tokenizer->expect(TomlToken::BARE);
 
         return $this->number("+$token->value");
     }
@@ -532,7 +535,7 @@ final class TomlParser
         for (; ;) {
             $this->takeCommentsAndNewlines();
 
-            if ($this->tokenizer->peek()->type === 'RIGHT_SQUARE_BRACKET') {
+            if ($this->tokenizer->peek()->type === TomlToken::RIGHT_SQUARE_BRACKET) {
                 break;
             }
 
@@ -540,14 +543,14 @@ final class TomlParser
             $arrayNode->addElement($value);
             $this->takeCommentsAndNewlines();
 
-            if (! $this->tokenizer->take('COMMA')) {
+            if (! $this->tokenizer->take(TomlToken::COMMA)) {
                 $this->takeCommentsAndNewlines();
 
                 break;
             }
         }
 
-        $this->tokenizer->assert('RIGHT_SQUARE_BRACKET');
+        $this->tokenizer->assert(TomlToken::RIGHT_SQUARE_BRACKET);
 
         return $arrayNode;
     }
@@ -557,10 +560,10 @@ final class TomlParser
      */
     protected function inlineTable(): InlineTableNode
     {
-        $this->tokenizer->take('WHITESPACE');
+        $this->tokenizer->take(TomlToken::WHITESPACE);
         $inlineTableNode = new InlineTableNode([]);
 
-        if ($this->tokenizer->take('RIGHT_CURLY_BRACKET')) {
+        if ($this->tokenizer->take(TomlToken::RIGHT_CURLY_BRACKET)) {
             return $inlineTableNode;
         }
 
@@ -569,11 +572,11 @@ final class TomlParser
             $keyValue = $this->keyValuePair();
             $keystore->addNode($keyValue);
             $inlineTableNode->addElement($keyValue);
-            $this->tokenizer->take('WHITESPACE');
-            if ($this->tokenizer->take('RIGHT_CURLY_BRACKET')) {
+            $this->tokenizer->take(TomlToken::WHITESPACE);
+            if ($this->tokenizer->take(TomlToken::RIGHT_CURLY_BRACKET)) {
                 break;
             }
-            $this->tokenizer->assert('COMMA');
+            $this->tokenizer->assert(TomlToken::COMMA);
         }
 
         return $inlineTableNode;

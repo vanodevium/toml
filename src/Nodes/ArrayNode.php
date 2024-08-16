@@ -5,14 +5,14 @@ namespace Devium\Toml\Nodes;
 /**
  * @internal
  */
-final class ArrayNode implements Node
+final class ArrayNode implements Node, ValuableNode
 {
     /**
      * @param  Node[]  $elements
      */
     public function __construct(private array $elements) {}
 
-    public function addElement(Node $element): void
+    public function addElement(ValuableNode $element): void
     {
         $this->elements[] = $element;
     }
