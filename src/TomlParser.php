@@ -364,8 +364,7 @@ final class TomlParser
             str_starts_with((string) $value, '0x') => $this->integer($value, 16),
             str_starts_with((string) $value, '0o') => $this->integer($value, 8),
             str_starts_with((string) $value, '0b') => $this->integer($value, 2),
-            str_contains((string) $value, 'e') => $this->float($value),
-            str_contains((string) $value, 'E') => $this->float($value),
+            str_contains(strtolower((string) $value), 'e') => $this->float($value),
             $this->tokenizer->peek()->type === TomlToken::PERIOD => $this->float($value),
             default => $this->integer($value, 10),
         };
