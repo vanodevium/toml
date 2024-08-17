@@ -6,6 +6,8 @@ use Exception;
 
 final class TomlError extends Exception
 {
+    public const RE = '/\r\n|\n|\r/';
+
     public mixed $tomlLine;
 
     public mixed $tomlColumn;
@@ -35,14 +37,14 @@ final class TomlError extends Exception
 
     protected function getLineColFromPosition($string, $position): array
     {
-        $lines = preg_split('/\r\n|\n|\r/', TomlUtils::stringSlice($string, 0, $position));
+        $lines = preg_split(self::RE, TomlUtils::stringSlice($string, 0, $position));
 
         return [count($lines), strlen((string) array_pop($lines))];
     }
 
     protected function makeCodeBlock($string, $line, $column): string
     {
-        $lines = preg_split('/\r\n|\n|\r/', (string) $string);
+        $lines = preg_split(self::RE, (string) $string);
         $codeBlock = '';
 
         $numberLen = ((int) log10($line + 1) | 0) + 1;
