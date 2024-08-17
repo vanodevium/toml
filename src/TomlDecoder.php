@@ -34,16 +34,7 @@ class TomlDecoder
             return $object;
         }
 
-        if (is_array($object)) {
-            $return = [];
-            foreach ($object as $key => $value) {
-                $return[$key] = self::toArray($value);
-            }
-
-            return $return;
-        }
-
-        if (is_object($object)) {
+        if (is_array($object) || is_object($object)) {
             $return = [];
             foreach ((array) $object as $key => $value) {
                 $return[$key] = self::toArray($value);

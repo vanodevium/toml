@@ -19,7 +19,7 @@ final class TomlKeystore
 
     private readonly Set $tables;
 
-    private Set $arrayTables;
+    private readonly Set $arrayTables;
 
     private readonly Set $implicitTables;
 

@@ -77,22 +77,25 @@ class TomlEncoder
         $tables = '';
         $keys = array_keys((array) $obj);
         foreach ($keys as $k) {
-            if ($obj->{$k} !== null) {
-                $type = self::extendedTypeOf($obj->{$k});
-                $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
-                if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
-                    $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
-                } elseif ($type === 'object') {
-                    $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
-                    $tables .= "[$tblKey]\n";
-                    $tables .= self::stringifyTable($obj->{$k}, $tblKey);
-                    $tables .= "\n\n";
-                } else {
-                    $preamble .= $key;
-                    $preamble .= ' = ';
-                    $preamble .= self::stringifyValue($obj->{$k}, $type);
-                    $preamble .= "\n";
-                }
+
+            if ($obj->{$k} === null) {
+                continue;
+            }
+
+            $type = self::extendedTypeOf($obj->{$k});
+            $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
+            if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
+                $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
+            } elseif ($type === 'object') {
+                $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
+                $tables .= "[$tblKey]\n";
+                $tables .= self::stringifyTable($obj->{$k}, $tblKey);
+                $tables .= "\n\n";
+            } else {
+                $preamble .= $key;
+                $preamble .= ' = ';
+                $preamble .= self::stringifyValue($obj->{$k}, $type);
+                $preamble .= "\n";
             }
         }
 

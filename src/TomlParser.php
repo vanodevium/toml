@@ -211,7 +211,7 @@ final class TomlParser
             return new BooleanNode($value === 'true');
         }
 
-        if (str_contains(substr($value, 1), '-') && ! str_contains($value, 'e-') && ! str_contains($value, 'E-')) {
+        if (str_contains(substr($value, 1), '-') && ! str_contains(strtolower($value), 'e-')) {
             return $this->dateOrDateTime($value);
         }
 
@@ -246,7 +246,12 @@ final class TomlParser
             return new LocalDateNode(TomlLocalDate::fromString($value));
         }
 
-        $tokens = $this->tokenizer->sequence(TomlToken::COLON, TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
+        $tokens = $this->tokenizer->sequence(
+            TomlToken::COLON,
+            TomlToken::BARE,
+            TomlToken::COLON,
+            TomlToken::BARE,
+        );
         $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
 
         $lastTokenValue = strtolower($tokens[count($tokens) - 1]->value);
