@@ -214,6 +214,7 @@ final class TomlParser
         if (str_contains(substr($value, 1), '-') && ! str_contains($value, 'e-') && ! str_contains($value, 'E-')) {
             return $this->dateOrDateTime($value);
         }
+
         if ($this->tokenizer->peek()->type === TomlToken::COLON) {
             return $this->time($value);
         }
@@ -241,21 +242,20 @@ final class TomlParser
             $value .= $token->value;
         }
 
-        if (! str_contains($value, 'T') && ! str_contains($value, 't')) {
+        if (! str_contains(strtolower($value), 't')) {
             return new LocalDateNode(TomlLocalDate::fromString($value));
         }
 
         $tokens = $this->tokenizer->sequence(TomlToken::COLON, TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
         $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
 
-        if (
-            str_ends_with($tokens[count($tokens) - 1]->value, 'Z') ||
-            str_ends_with($tokens[count($tokens) - 1]->value, 'z')
-        ) {
+        $lastTokenValue = strtolower($tokens[count($tokens) - 1]->value);
+
+        if (str_ends_with($lastTokenValue, 'z')) {
             return new OffsetDateTimeNode($this->parseDate($value));
         }
 
-        if (str_contains($tokens[count($tokens) - 1]->value, '-')) {
+        if (str_contains($lastTokenValue, '-')) {
             $this->tokenizer->assert(TomlToken::COLON);
             $token = $this->tokenizer->expect(TomlToken::BARE);
             $value .= ':';
