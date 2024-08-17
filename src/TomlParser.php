@@ -328,7 +328,12 @@ final class TomlParser
      */
     protected function time($value): LocalTimeNode
     {
-        $tokens = $this->tokenizer->sequence(TomlToken::COLON, TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
+        $tokens = $this->tokenizer->sequence(
+            TomlToken::COLON,
+            TomlToken::BARE,
+            TomlToken::COLON,
+            TomlToken::BARE,
+        );
         $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
         if ($this->tokenizer->take(TomlToken::PERIOD)) {
             $token = $this->tokenizer->expect(TomlToken::BARE);
