@@ -3,12 +3,12 @@
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 
 
-# Devium\Toml
+# Devium/Toml
 
-[![Build status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.4&style=flat-square&label=tests)](https://github.com/vanodevium/toml)
-[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.4&style=flat-square&label=stable)](https://packagist.org/packages/devium/toml)
-[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.4&style=flat-square)](https://packagist.org/packages/devium/toml)
-[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.4&style=flat-square)](https://packagist.org/packages/devium/toml)
+[![Build status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.5&style=flat-square&label=tests)](https://github.com/vanodevium/toml)
+[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.5&style=flat-square&label=stable)](https://packagist.org/packages/devium/toml)
+[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.5&style=flat-square)](https://packagist.org/packages/devium/toml)
+[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.5&style=flat-square)](https://packagist.org/packages/devium/toml)
 
 A robust and efficient PHP library for encoding and decoding [TOML](https://github.com/toml-lang/toml)
 compatible with [v1.0.0](https://toml.io/en/v1.0.0)
@@ -154,6 +154,18 @@ Invalid TOML document: unexpected non-numeric value
 ```
 
 Else it has message about whole input.
+
+### About floating-point values
+
+The decoder returns each floating-point value as a string by default.
+
+You can force it to return a float type by setting the **$asFloat** argument:
+
+```php
+toml_decode($toml, asFloat: true);
+// or
+\Devium\Toml\Toml::decode($toml, asFloat: true);
+```
 
 ### About NULL
 
