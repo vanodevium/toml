@@ -13,9 +13,9 @@ class TomlDecoder
     /**
      * @throws TomlError
      */
-    public static function decode(string $input, bool $asArray = false): array|stdClass
+    public static function decode(string $input, bool $asArray = false, bool $asFloat = false): array|stdClass
     {
-        $parser = new TomlParser($input);
+        $parser = new TomlParser($input, $asFloat);
 
         if ($asArray) {
             return self::toArray(TomlNormalizer::normalize($parser->parse()));

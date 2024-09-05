@@ -39,7 +39,7 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    public function __construct(string $input)
+    public function __construct(string $input, private readonly bool $asFloat = false)
     {
         $this->tokenizer = new TomlTokenizer($input);
         $this->keystore = new TomlKeystore;
@@ -502,7 +502,7 @@ final class TomlParser
         }
 
         if ($unparsed === '') {
-            return new FloatNode($float);
+            return new FloatNode($this->asFloat ? (float) $float : $float);
         }
 
         if (! str_starts_with((string) $unparsed, 'e') && ! str_starts_with((string) $unparsed, 'E')) {

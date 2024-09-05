@@ -17,8 +17,8 @@ if (! function_exists('toml_decode')) {
     /**
      * @throws TomlError
      */
-    function toml_decode(string $toml, bool $asArray = false): array|stdClass
+    function toml_decode(string $toml, bool $asArray = false, bool $asFloat = false): array|stdClass
     {
-        return Toml::decode($toml, $asArray);
+        return Toml::decode($toml, $asArray, $asFloat);
     }
 }

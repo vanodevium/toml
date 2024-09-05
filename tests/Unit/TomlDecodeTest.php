@@ -158,3 +158,22 @@ TOML_STRING;
         expect(toml_decode($toml))->toEqual((object) $data)
             ->and(toml_decode($toml, true))->toEqual($data);
     });
+
+it('can decode PI value as float',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $toml = <<<'TOML_STRING'
+pi = 3.141592653589793
+-pi = -3.141592653589793
+TOML_STRING;
+
+        $parsed = toml_decode($toml, asFloat: true);
+        expect($parsed->{'pi'})->toBeFloat()->toEqual(3.141592653589793)
+            ->and($parsed->{'-pi'})->toBeFloat()->toEqual(-3.141592653589793);
+
+        $parsed = toml_decode($toml, asArray: true, asFloat: true);
+        expect($parsed['pi'])->toBeFloat()->toEqual(3.141592653589793)
+            ->and($parsed['-pi'])->toBeFloat()->toEqual(-3.141592653589793);
+    });

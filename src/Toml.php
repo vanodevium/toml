@@ -17,8 +17,8 @@ class Toml
     /**
      * @throws TomlError
      */
-    public static function decode(string $data, bool $asArray = false): array|stdClass
+    public static function decode(string $data, bool $asArray = false, bool $asFloat = false): array|stdClass
     {
-        return TomlDecoder::decode($data, $asArray);
+        return TomlDecoder::decode($data, $asArray, $asFloat);
     }
 }
