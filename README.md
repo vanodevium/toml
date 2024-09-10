@@ -2,10 +2,9 @@
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://vshymanskyy.github.io/StandWithUkraine/)
 
-
 # Devium/Toml
 
-[![Build status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.5&style=flat-square&label=tests)](https://github.com/vanodevium/toml)
+[![Tests status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.5&style=flat-square&label=tests)](https://github.com/vanodevium/toml)
 [![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.5&style=flat-square&label=stable)](https://packagist.org/packages/devium/toml)
 [![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.5&style=flat-square)](https://packagist.org/packages/devium/toml)
 [![License](https://img.shields.io/packagist/l/devium/toml?v1.0.5&style=flat-square)](https://packagist.org/packages/devium/toml)
@@ -28,7 +27,56 @@ This library provides a comprehensive solution for working with TOML in PHP appl
 -   Supports TOML datetime formats
 -   Error handling with informative messages
 
-### About TOML datetime formats
+## Installation
+
+You can install this library via composer:
+
+```shell
+composer require devium/toml
+```
+
+## Usage
+
+Decoding:
+
+```php
+$toml = <<<TOML
+
+# This is a TOML document
+
+title = "TOML Example"
+
+[owner]
+name = "Tom Preston-Werner"
+dob = 1979-05-27T07:32:00-08:00
+
+TOML;
+
+dump(\Devium\Toml\Toml::decode($toml, asArray: true));
+dump(\Devium\Toml\Toml::decode($toml, asArray: false));
+
+// or use global helper
+dump(toml_decode($toml, asArray: false));
+dump(toml_decode($toml, asArray: true));
+```
+
+Encoding:
+
+```php
+$data = [
+  "title" => "TOML Example",
+  "owner" => [
+    "name" => "Tom Preston-Werner",
+    "dob" => "1979-05-27T15:32:00.000Z",
+  ],
+];
+
+dump(\Devium\Toml\Toml::encode($data));
+// or use global helper
+dump(toml_encode($data));
+```
+
+## About TOML datetime formats
 
 This library tries to parse TOML datetime formats into next variants (according to the specification):
 
@@ -139,7 +187,7 @@ DateTimeInterface = 1979-05-27T07:32:00.000Z
 TomlDateTimeInterface = 1979-05-27T07:32:00.000Z
 ```
 
-### About informative errors
+## About informative errors
 
 If there is parsing error, `TomlError` has the approximate location of the problem in the message.
 Something like:
@@ -155,7 +203,7 @@ Invalid TOML document: unexpected non-numeric value
 
 Else it has message about whole input.
 
-### About floating-point values
+## About floating-point values
 
 The decoder returns each floating-point value as a string by default.
 
@@ -167,62 +215,13 @@ toml_decode($toml, asFloat: true);
 \Devium\Toml\Toml::decode($toml, asFloat: true);
 ```
 
-### About NULL
+## About NULL
 
 **TOML does not support null values.**
 
 If the array contains a null value, an exception will be thrown.
 
 The only thing possible is a null value for the keys in the tables. Such keys are simply skipped during encoding.
-
-## Installation
-
-You can install this library via composer:
-
-```shell
-composer require devium/toml
-```
-
-## Usage
-
-Decoding:
-
-```php
-$toml = <<<TOML
-
-# This is a TOML document
-
-title = "TOML Example"
-
-[owner]
-name = "Tom Preston-Werner"
-dob = 1979-05-27T07:32:00-08:00
-
-TOML;
-
-dump(\Devium\Toml\Toml::decode($toml, asArray: true));
-dump(\Devium\Toml\Toml::decode($toml, asArray: false));
-
-// or use global helper
-dump(toml_decode($toml, asArray: false));
-dump(toml_decode($toml, asArray: true));
-```
-
-Encoding:
-
-```php
-$data = [
-  "title" => "TOML Example",
-  "owner" => [
-    "name" => "Tom Preston-Werner",
-    "dob" => "1979-05-27T15:32:00.000Z",
-  ],
-];
-
-dump(\Devium\Toml\Toml::encode($data));
-// or use global helper
-dump(toml_encode($data));
-```
 
 ## Contributing
 
