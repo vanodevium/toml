@@ -35,9 +35,7 @@ class TomlDecoder
         }
 
         if (is_array($object) || is_object($object)) {
-            return array_map(static function ($value) {
-                return self::toArray($value);
-            }, (array) $object);
+            return array_map(static fn($value) => self::toArray($value), (array) $object);
         }
 
         return $object;
