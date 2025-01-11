@@ -17,6 +17,6 @@ skip_encode=(
 )
 
 e=0
-toml-test          "${skip_decode[@]}" ./toml-test-decode.php || e=1
-toml-test -encoder "${skip_encode[@]}" ./toml-test-encode.php || e=1
+toml-test          "${skip_decode[@]}" php ./toml-test-decode.php || e=1
+toml-test -encoder "${skip_encode[@]}" php ./toml-test-encode.php || e=1
 exit $e

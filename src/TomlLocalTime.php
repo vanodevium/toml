@@ -12,7 +12,7 @@ final class TomlLocalTime extends TomlInternalDateTime
         public readonly int $second,
         $millisecond
     ) {
-        $this->millisecond = intval(substr((string) $millisecond, 0, 3));
+        $this->millisecond = (int) substr((string) $millisecond, 0, 3);
     }
 
     /**

@@ -87,7 +87,7 @@ class TomlTag
             return array_map(static fn ($item) => self::untagObject($item), $obj);
         }
 
-        if (count(get_object_vars($obj)) === 2 && property_exists($obj, 'type') && property_exists($obj, 'value')) {
+        if (property_exists($obj, 'type') && property_exists($obj, 'value') && count(get_object_vars($obj)) === 2) {
             switch ($obj->type) {
                 case 'string':
                     return $obj->value;
