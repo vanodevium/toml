@@ -484,7 +484,7 @@ final class TomlParser
         $sign = $parsed['sign'];
 
         if ($this->tokenizer->take(TomlToken::PERIOD)) {
-            if (preg_match('/^[+-]?0\d+/im', (string) $value)) {
+            if (preg_match('/^[+-]?0\d+/m', (string) $value)) {
                 throw new TomlError('unexpected float formatting');
             }
 

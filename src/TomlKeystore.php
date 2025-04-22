@@ -64,10 +64,9 @@ final class TomlKeystore
         }
 
         $components = $this->makeKeyComponents($node->key);
-        $counter = count($components);
 
-        for ($i = 0; $i < $counter; $i++) {
-            $component = $components[$i];
+        foreach ($components as $i => $iValue) {
+            $component = $iValue;
 
             $key .= ($i !== 0 ? '.' : '').$component;
 

@@ -21,7 +21,7 @@ final class TomlInputIterator
     public function take(...$chars): bool
     {
         $char = $this->peek();
-        if ($char !== self::EOF && in_array($char, $chars, false)) {
+        if ($char !== self::EOF && in_array($char, $chars, true)) {
             $this->next();
 
             return true;

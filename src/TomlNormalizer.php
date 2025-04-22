@@ -90,7 +90,7 @@ final class TomlNormalizer
      */
     protected static function merge(...$values): TomlObject
     {
-        return array_reduce($values, function (TomlObject $acc, $value) {
+        return array_reduce($values, static function (TomlObject $acc, $value) {
             foreach ($value as $key => $nextValue) {
 
                 $prevValue = $acc->offsetExists($key) ? $acc->offsetGet($key) : null;
@@ -100,8 +100,8 @@ final class TomlNormalizer
                 } elseif (self::isKeyValuePair($prevValue) && self::isKeyValuePair($nextValue)) {
                     $acc->{$key} = self::merge($prevValue, $nextValue);
                 } elseif (is_array($prevValue) &&
-                    self::isKeyValuePair(end($prevValue)) &&
-                    self::isKeyValuePair($nextValue)) {
+                    self::isKeyValuePair($nextValue) &&
+                    self::isKeyValuePair(end($prevValue))) {
                     $prevValueLastElement = end($prevValue);
                     $acc->{$key} = array_merge(
                         array_slice($prevValue, 0, -1),
@@ -135,8 +135,8 @@ final class TomlNormalizer
         $initialValue = new TomlObject([]);
         $object = &$initialValue;
         foreach (array_slice($keys, 0, -1) as $prop) {
-            $object->{$prop} = new TomlObject([]);
-            $object = &$object->{$prop};
+            $object[$prop] = new TomlObject([]);
+            $object = &$object[$prop];
         }
 
         $key = array_pop($keys);
