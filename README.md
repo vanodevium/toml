@@ -4,10 +4,10 @@
 
 # Devium/Toml
 
-[![Tests status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.5&style=flat-square&label=tests)](https://github.com/vanodevium/toml)
-[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.5&style=flat-square&label=stable)](https://packagist.org/packages/devium/toml)
-[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.5&style=flat-square)](https://packagist.org/packages/devium/toml)
-[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.5&style=flat-square)](https://packagist.org/packages/devium/toml)
+[![Tests status](https://img.shields.io/github/actions/workflow/status/vanodevium/toml/ci.yaml?v1.0.6&style=flat-square&label=tests)](https://github.com/vanodevium/toml)
+[![Latest Version](https://img.shields.io/packagist/v/devium/toml?v1.0.6&style=flat-square&label=stable)](https://packagist.org/packages/devium/toml)
+[![Downloads](https://img.shields.io/packagist/dt/devium/toml?v1.0.6&style=flat-square)](https://packagist.org/packages/devium/toml)
+[![License](https://img.shields.io/packagist/l/devium/toml?v1.0.6&style=flat-square)](https://packagist.org/packages/devium/toml)
 
 A robust and efficient PHP library for encoding and decoding [TOML](https://github.com/toml-lang/toml)
 compatible with [v1.0.0](https://toml.io/en/v1.0.0)
