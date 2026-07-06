@@ -83,7 +83,7 @@ class TomlEncoder
             }
 
             $type = self::extendedTypeOf($obj->{$k});
-            $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
+            $key = preg_match(self::BARE_KEY, (string) $k) ? $k : self::formatString($k);
             if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
                 $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
             } elseif ($type === 'object') {
@@ -205,7 +205,7 @@ class TomlEncoder
             if ($i !== 0) {
                 $res .= ', ';
             }
-            $res .= preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
+            $res .= preg_match(self::BARE_KEY, (string) $k) ? $k : self::formatString($k);
             $res .= ' = ';
             $res .= self::stringifyValue($obj->{$k});
         }

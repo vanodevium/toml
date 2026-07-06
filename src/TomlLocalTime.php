@@ -25,8 +25,8 @@ final class TomlLocalTime extends TomlInternalDateTime
         }
 
         $components = explode(':', (string) $value);
-        [$hour, $minute] = array_map('intval', array_slice($components, 0, 2));
-        $p = array_map('intval', explode('.', $components[2]));
+        [$hour, $minute] = array_map(intval(...), array_slice($components, 0, 2));
+        $p = array_map(intval(...), explode('.', $components[2]));
         $second = $p[0];
         $millisecond = $p[1] ?? 0;
 

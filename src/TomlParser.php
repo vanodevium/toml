@@ -254,7 +254,7 @@ final class TomlParser
         );
         $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
 
-        $lastTokenValue = strtolower($tokens[count($tokens) - 1]->value);
+        $lastTokenValue = strtolower((string) $tokens[count($tokens) - 1]->value);
 
         if (str_ends_with($lastTokenValue, 'z')) {
             return new OffsetDateTimeNode($this->parseDate($value));
@@ -429,7 +429,7 @@ final class TomlParser
             }
 
             $octalOrBinary = ($radix === 8 && $char === 'o') || ($radix === 2 && $char === 'b');
-            if (! ($i === 1 && $octalOrBinary) && ! $this->digitalChecks($radix, $char)) {
+            if (($i !== 1 || ! $octalOrBinary) && ! $this->digitalChecks($radix, $char)) {
                 break;
             }
 

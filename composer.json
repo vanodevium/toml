@@ -19,9 +19,9 @@
     },
     "require-dev": {
         "laravel/pint": "^1.17.3",
-        "pestphp/pest": "^2.35.1",
-        "phpstan/phpstan": "^1.12.2",
-        "rector/rector": "^1.2.4",
+        "pestphp/pest": "^v3.8.6",
+        "phpstan/phpstan": "^2.2.5",
+        "rector/rector": "^2.5.3",
         "symfony/var-dumper": "^6.4|^7.1.4"
     },
     "autoload": {
