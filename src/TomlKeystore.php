@@ -242,7 +242,7 @@ final class TomlKeystore
         }
 
         if ($index === 0 && ! $this->tables->filter(
-            static fn ($table) => str_starts_with((string) $table, $header))->isEmpty()
+            static fn ($table) => str_starts_with((string) $table, $header  . "."))->isEmpty()
         ) {
             throw new TomlError('key duplication');
         }

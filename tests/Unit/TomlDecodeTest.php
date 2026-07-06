@@ -63,6 +63,11 @@ it('can decode TOML',
         { "name": "plantain" }
       ]
     }
+  ],
+  "fruit": [
+    {
+      "name": "strawberry"
+    }
   ]
 }
 JSON_STRING;
@@ -111,6 +116,9 @@ name = "banana"
 
 [[fruits.varieties]]
 name = "plantain"
+
+[[fruit]] # prefix of existing array
+name = "strawberry"
 TOML_STRING;
 
         expect(toml_decode($toml))->toEqual(json_decode($json, false))
