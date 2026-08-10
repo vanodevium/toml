@@ -234,7 +234,7 @@ final class TomlKeystore
                 continue;
             }
 
-            if (str_starts_with($header, $arrayTableHeader)) {
+            if (str_starts_with($header, $arrayTableHeader . '.')) {
                 $key = $arrayTable.substr($header, strlen($arrayTableHeader));
 
                 break;
@@ -242,7 +242,7 @@ final class TomlKeystore
         }
 
         if ($index === 0 && ! $this->tables->filter(
-            static fn ($table) => str_starts_with((string) $table, $header))->isEmpty()
+            static fn ($table) => str_starts_with((string) $table, $header  . "."))->isEmpty()
         ) {
             throw new TomlError('key duplication');
         }

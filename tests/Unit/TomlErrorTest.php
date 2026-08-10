@@ -35,3 +35,31 @@ TOML_STRING;
 
         expect(static fn () => toml_decode($toml, true))->toThrow(TomlError::class, $message);
     });
+
+it('throws on invalid array order',
+    /**
+     * @throws TomlError
+     */
+    function () {
+
+        $message = <<<'MESSAGE'
+Invalid TOML document: key duplication
+
+5:  # This requires a to be an array table
+6:  [[a]]
+         ^
+7:  y = 2
+MESSAGE;
+
+        $toml = <<<'TOML_STRING'
+# This creates a as a normal (non-array) table
+[[a.b]]
+x = 1
+
+# This requires a to be an array table
+[[a]]
+y = 2
+TOML_STRING;
+
+        expect(static fn () => toml_decode($toml, true))->toThrow(TomlError::class, $message);
+    });
