@@ -2,7 +2,7 @@ name: check availability
 
 on:
   schedule:
-    - cron: "0,5 * * * *"
+    - cron: "0,30 * * * *"
   push:
     branches:
       - main
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: ["8.2", "8.3", "8.4"]
+        php-versions: ["8.2", "8.3", "8.4", "8.5"]
     name: PHP ${{ matrix.php-versions }}
     steps:
       - name: Setup PHP

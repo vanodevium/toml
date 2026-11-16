@@ -355,7 +355,7 @@ final class TomlTokenizer
      */
     public function sequence(...$types): array
     {
-        return array_map(fn ($type) => $this->expect($type), $types);
+        return array_map($this->expect(...), $types);
     }
 
     /**

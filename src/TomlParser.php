@@ -429,7 +429,7 @@ final class TomlParser
             }
 
             $octalOrBinary = ($radix === 8 && $char === 'o') || ($radix === 2 && $char === 'b');
-            if (! ($i === 1 && $octalOrBinary) && ! $this->digitalChecks($radix, $char)) {
+            if (($i !== 1 || ! $octalOrBinary) && ! $this->digitalChecks($radix, $char)) {
                 break;
             }
 

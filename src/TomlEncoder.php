@@ -138,9 +138,7 @@ class TomlEncoder
      */
     protected static function stringifyValue(mixed $value, ?string $type = null): string
     {
-        if ($type === null) {
-            $type = self::extendedTypeOf($value);
-        }
+        $type ??= self::extendedTypeOf($value);
 
         if ($type === 'integer' || $type === 'double') {
             if (is_nan($value)) {

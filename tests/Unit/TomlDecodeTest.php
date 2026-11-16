@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Devium\Toml\TomlError;
 
 it('can decode TOML',

@@ -19,7 +19,7 @@ final class TomlLocalDate extends TomlInternalDateTime
             throw new TomlError("invalid local date format \"$value\"");
         }
 
-        [$year, $month, $day] = array_map('intval', explode('-', (string) $value));
+        [$year, $month, $day] = array_map(intval(...), explode('-', (string) $value));
 
         if (! self::isYear($year) || ! self::isMonth($month) || ! self::isDay($day)) {
             throw new TomlError("invalid local date format \"$value\"");

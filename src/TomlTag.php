@@ -61,7 +61,7 @@ class TomlTag
         }
 
         if (is_array($obj)) {
-            return array_map(static fn ($item) => self::tagObject($item), $obj);
+            return array_map(self::tagObject(...), $obj);
         }
 
         $tagged = new stdClass;
@@ -84,7 +84,7 @@ class TomlTag
     public static function untagObject($obj)
     {
         if (is_array($obj)) {
-            return array_map(static fn ($item) => self::untagObject($item), $obj);
+            return array_map(self::untagObject(...), $obj);
         }
 
         if (property_exists($obj, 'type') && property_exists($obj, 'value') && count(get_object_vars($obj)) === 2) {

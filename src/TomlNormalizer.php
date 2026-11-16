@@ -82,7 +82,7 @@ final class TomlNormalizer
      */
     protected static function mapNormalize(array $items): array
     {
-        return array_map(static fn ($element) => self::normalize($element), $items);
+        return array_map(self::normalize(...), $items);
     }
 
     /**
