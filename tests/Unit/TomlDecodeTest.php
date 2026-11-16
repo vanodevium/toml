@@ -63,6 +63,11 @@ it('can decode TOML',
         { "name": "plantain" }
       ]
     }
+  ],
+  "fruit": [
+    {
+      "name": "strawberry"
+    }
   ]
 }
 JSON_STRING;
@@ -111,10 +116,47 @@ name = "banana"
 
 [[fruits.varieties]]
 name = "plantain"
+
+[[fruit]] # prefix of existing array
+name = "strawberry"
 TOML_STRING;
 
         expect(toml_decode($toml))->toEqual(json_decode($json, false))
             ->and(toml_decode($toml, true))->toEqual(json_decode($json, true));
+    });
+
+it('can decode array tables whose names share a prefix',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $toml = <<<'TOML_STRING'
+[[items]]
+name = "first"
+
+[[itemsExtended]]
+name = "second"
+
+[[itemsExtendedMore]]
+name = "third"
+
+[[itemsExtendedMore.entries]]
+name = "first entry"
+
+[itemsExtendedMore.entries.metadata]
+type = "primary"
+
+[[itemsExtendedMore.entries]]
+name = "second entry"
+
+[itemsExtendedMore.entries.metadata]
+type = "secondary"
+TOML_STRING;
+
+        $decoded = toml_decode($toml, true);
+
+        expect($decoded)->toHaveCount(3)
+            ->and($decoded['itemsExtendedMore'][0]['entries'][1]['metadata']['type'])->toBe('secondary');
     });
 
 it('can decode TOML datetime formats',
