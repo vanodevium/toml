@@ -125,6 +125,40 @@ TOML_STRING;
             ->and(toml_decode($toml, true))->toEqual(json_decode($json, true));
     });
 
+it('can decode array tables whose names share a prefix',
+    /**
+     * @throws TomlError
+     */
+    function () {
+        $toml = <<<'TOML_STRING'
+[[items]]
+name = "first"
+
+[[itemsExtended]]
+name = "second"
+
+[[itemsExtendedMore]]
+name = "third"
+
+[[itemsExtendedMore.entries]]
+name = "first entry"
+
+[itemsExtendedMore.entries.metadata]
+type = "primary"
+
+[[itemsExtendedMore.entries]]
+name = "second entry"
+
+[itemsExtendedMore.entries.metadata]
+type = "secondary"
+TOML_STRING;
+
+        $decoded = toml_decode($toml, true);
+
+        expect($decoded)->toHaveCount(3)
+            ->and($decoded['itemsExtendedMore'][0]['entries'][1]['metadata']['type'])->toBe('secondary');
+    });
+
 it('can decode TOML datetime formats',
     /**
      * @throws TomlError
