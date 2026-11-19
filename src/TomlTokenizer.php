@@ -32,6 +32,16 @@ final class TomlTokenizer
 
     protected TomlInputIterator $iterator;
 
+    private const BARE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+    private const CONTROL_NO_TAB = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x7f";
+
+    private int $peekPos = -2;
+
+    private int $peekEnd = -2;
+
+    private ?TomlToken $peekToken = null;
+
     /**
      * @throws TomlError
      */
@@ -45,7 +55,7 @@ final class TomlTokenizer
      */
     protected function validateInput(string $input): string
     {
-        if (preg_match('/("""\n?.*\\\\ )|(\\\\ .*\n?""")/', $input)) {
+        if (str_contains($input, '\\ ') && preg_match('/("""\n?.*\\\\ )|(\\\\ .*\n?""")/', $input)) {
             throw new TomlError('unexpected \\<space> escaping');
         }
 
@@ -83,8 +93,14 @@ final class TomlTokenizer
     public function peek(): TomlToken
     {
         $pos = $this->iterator->pos;
+        if ($pos === $this->peekPos) {
+            return $this->peekToken;
+        }
         try {
             $token = $this->next();
+            $this->peekPos = $pos;
+            $this->peekEnd = $this->iterator->pos;
+            $this->peekToken = $token;
             $this->iterator->pos = $pos;
 
             return $token;
@@ -99,6 +115,12 @@ final class TomlTokenizer
      */
     public function next(): TomlToken
     {
+        if ($this->iterator->pos === $this->peekPos) {
+            $this->iterator->pos = $this->peekEnd;
+            $this->peekPos = -2;
+
+            return $this->peekToken;
+        }
         $char = $this->iterator->next();
         $start = $this->iterator->pos;
         if ($this->isPunctuatorOrNewline($char)) {
@@ -137,9 +159,7 @@ final class TomlTokenizer
 
     protected function scanBare($start): TomlToken
     {
-        while ($this->isBare($this->iterator->peek())) {
-            $this->iterator->next();
-        }
+        $this->iterator->pos += strspn($this->iterator->input, self::BARE_CHARS, $this->iterator->pos + 1);
 
         return $this->returnScan(TomlToken::BARE, $start);
     }
@@ -164,9 +184,7 @@ final class TomlTokenizer
 
     protected function scanWhitespace($start): TomlToken
     {
-        while ($this->isWhitespace($this->iterator->peek())) {
-            $this->iterator->next();
-        }
+        $this->iterator->pos += strspn($this->iterator->input, " \t", $this->iterator->pos + 1);
 
         return $this->returnScan(TomlToken::WHITESPACE, $start);
     }
@@ -178,17 +196,7 @@ final class TomlTokenizer
 
     protected function scanComment($start): TomlToken
     {
-        while (! $this->iterator->isEOF()) {
-
-            $char = $this->iterator->peek();
-            if (! $this->isControlCharacterOtherThanTab($char)) {
-                $this->iterator->next();
-
-                continue;
-            }
-
-            return $this->returnScan(TomlToken::COMMENT, $start);
-        }
+        $this->iterator->pos += strcspn($this->iterator->input, self::CONTROL_NO_TAB, $this->iterator->pos + 1);
 
         return $this->returnScan(TomlToken::COMMENT, $start);
     }
@@ -236,7 +244,18 @@ final class TomlTokenizer
             $this->iterator->take("\n");
         }
         $value = '';
+        $input = $this->iterator->input;
+        $stop = $delimiter.'\\'.self::CONTROL_NO_TAB;
         for (; ;) {
+            $p = $this->iterator->pos + 1;
+            $n = strcspn($input, $stop, $p);
+            if ($n > 0) {
+                $value .= substr($input, $p, $n);
+                $this->iterator->pos += $n;
+                if ($this->iterator->isEOF()) {
+                    throw new TomlError('unexpected EOF or control character: '.$input[$p + $n - 1]);
+                }
+            }
             $char = $this->iterator->next();
             switch ($char) {
                 case "\n":

@@ -14,7 +14,6 @@
     "require": {
         "php": ">=8.2",
         "ext-json": "*",
-        "php-ds/php-ds": "^1.5",
         "symfony/polyfill-mbstring": "^1.30"
     },
     "require-dev": {
@@ -33,7 +32,6 @@
         ]
     },
     "suggest": {
-        "ext-ds": "For best performance",
         "ext-mbstring": "For best performance"
     },
     "autoload-dev": {

@@ -90,32 +90,43 @@ final class TomlNormalizer
      */
     protected static function merge(...$values): TomlObject
     {
-        return array_reduce($values, static function (TomlObject $acc, $value) {
-            foreach ($value as $key => $nextValue) {
+        $acc = new TomlObject([]);
+        foreach ($values as $value) {
+            self::mergeInto($acc, $value);
+        }
 
-                $prevValue = $acc->offsetExists($key) ? $acc->offsetGet($key) : null;
+        return $acc;
+    }
 
-                if (is_array($prevValue) && is_array($nextValue)) {
-                    $acc->{$key} = array_merge($prevValue, $nextValue);
-                } elseif (self::isKeyValuePair($prevValue) && self::isKeyValuePair($nextValue)) {
-                    $acc->{$key} = self::merge($prevValue, $nextValue);
-                } elseif (is_array($prevValue) &&
-                    self::isKeyValuePair($nextValue) &&
-                    self::isKeyValuePair(end($prevValue))) {
-                    $prevValueLastElement = end($prevValue);
-                    $acc->{$key} = array_merge(
-                        array_slice($prevValue, 0, -1),
-                        [self::merge($prevValueLastElement, $nextValue)]
-                    );
-                } elseif (isset($prevValue)) {
-                    throw new TomlError('unexpected value');
-                } else {
-                    $acc->{$key} = $nextValue;
+    /**
+     * Merges $value into $acc in place (no copying of already merged data).
+     *
+     * @throws TomlError
+     */
+    protected static function mergeInto(TomlObject $acc, $value): void
+    {
+        foreach ($value as $key => $nextValue) {
+
+            $prevValue = $acc->offsetExists($key) ? $acc->offsetGet($key) : null;
+
+            if (is_array($prevValue) && is_array($nextValue)) {
+                $acc->offsetSet($key, null); // drop the storage reference so the append below does not copy
+                foreach ($nextValue as $item) {
+                    $prevValue[] = $item;
                 }
+                $acc->offsetSet($key, $prevValue);
+            } elseif (self::isKeyValuePair($prevValue) && self::isKeyValuePair($nextValue)) {
+                self::mergeInto($prevValue, $nextValue);
+            } elseif (is_array($prevValue) &&
+                self::isKeyValuePair($nextValue) &&
+                self::isKeyValuePair(end($prevValue))) {
+                self::mergeInto(end($prevValue), $nextValue);
+            } elseif (isset($prevValue)) {
+                throw new TomlError('unexpected value');
+            } else {
+                $acc->offsetSet($key, $nextValue);
             }
-
-            return $acc;
-        }, new TomlObject([]));
+        }
     }
 
     protected static function isKeyValuePair($value): bool

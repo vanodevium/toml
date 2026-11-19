@@ -8,27 +8,59 @@ use Devium\Toml\Nodes\KeyNode;
 use Devium\Toml\Nodes\KeyValuePairNode;
 use Devium\Toml\Nodes\StringNode;
 use Devium\Toml\Nodes\TableNode;
-use Ds\Set;
 
 /**
  * @internal
  */
-final readonly class TomlKeystore
+final class TomlKeystore
 {
-    private Set $keys;
+    private array $keys = [];
 
-    private Set $tables;
+    private array $tables = [];
 
-    private Set $arrayTables;
+    private ?string $lastTable = null;
 
-    private Set $implicitTables;
+    /** @var array<string,true> */
+    private array $arrayTablesSet = [];
 
-    public function __construct()
+    /** @var list<string> */
+    private array $arrayTables = [];
+
+    private array $implicitTables = [];
+
+    /** derived header => [seq, arrayTableKey] of the most recent array-table entry with that header */
+    private array $latestByHeader = [];
+
+    /** resolved array key (without index) => number of entries */
+    private array $arrayCounts = [];
+
+    private int $seq = 0;
+
+    /** @return array{0:int,1:string}|null most recent entry whose header is a prefix of $header (at given cut points) */
+    private function nearestEntry(string $header, bool $anyPrefix, bool $allowEqual): ?array
     {
-        $this->keys = new Set;
-        $this->tables = new Set;
-        $this->arrayTables = new Set;
-        $this->implicitTables = new Set;
+        $best = null;
+        $len = strlen($header);
+        if ($anyPrefix) {
+            for ($k = 0; $k <= $len; $k++) {
+                $e = $this->latestByHeader[substr($header, 0, $k)] ?? null;
+                if ($e !== null && ($best === null || $e[0] > $best[0])) {
+                    $best = $e;
+                }
+            }
+
+            return $best;
+        }
+        $off = 0;
+        while (($k = strpos($header, '.', $off)) !== false) {
+            $e = $this->latestByHeader[substr($header, 0, $k)] ?? null;
+            if ($e !== null && ($best === null || $e[0] > $best[0])) {
+                $best = $e;
+            }
+            $off = $k + 1;
+        }
+
+        return $best;
     }
 
     /**
@@ -58,9 +90,8 @@ final readonly class TomlKeystore
     {
         $key = '';
 
-        if (! $this->tables->isEmpty()) {
-            $table = $this->tables->last();
-            $key = "$table.";
+        if ($this->lastTable !== null) {
+            $key = "$this->lastTable.";
         }
 
         $components = $this->makeKeyComponents($node->key);
@@ -95,32 +126,32 @@ final readonly class TomlKeystore
 
     protected function keysContains(string $key): bool
     {
-        return $this->keys->contains($key);
+        return isset($this->keys[$key]);
     }
 
     protected function tablesContains(string $key): bool
     {
-        return $this->tables->contains($key);
+        return isset($this->tables[$key]);
     }
 
     protected function tablesContainsZeroIndex(string $key): bool
     {
-        return $this->tables->contains("$key.[0]");
+        return isset($this->tables["$key.[0]"]);
     }
 
     protected function implicitTablesAdd(string $key): void
     {
-        $this->implicitTables->add($key);
+        $this->implicitTables[$key] = true;
     }
 
     protected function implicitTablesContains(string $key): bool
     {
-        return $this->implicitTables->contains($key);
+        return isset($this->implicitTables[$key]);
     }
 
     protected function keysAdd(string $key): void
     {
-        $this->keys->add($key);
+        $this->keys[$key] = true;
     }
 
     /**
@@ -130,16 +161,8 @@ final readonly class TomlKeystore
     {
         $components = $this->makeKeyComponents($tableNode->key);
         $header = $this->makeKey($tableNode->key);
-        $arrayTable = $this->arrayTables->reversed();
-        $foundArrayTable = null;
-
-        foreach ($arrayTable as $arrayTableItem) {
-            if (str_starts_with($header, $this->makeHeaderFromArrayTable($arrayTableItem))) {
-                $foundArrayTable = $arrayTableItem;
-
-                break;
-            }
-        }
+        $found = $this->nearestEntry($header, true, true);
+        $foundArrayTable = $found[1] ?? null;
 
         $key = '';
 
@@ -176,7 +199,15 @@ final readonly class TomlKeystore
             throw new TomlError('key duplication');
         }
 
-        $this->tables->add($key);
+        $this->addTable($key);
+    }
+
+    private function addTable(string $key): void
+    {
+        if (! isset($this->tables[$key])) {
+            $this->tables[$key] = true;
+            $this->lastTable = $key;
+        }
     }
 
     protected function makeKey(KeyNode $keyNode): string
@@ -205,7 +236,7 @@ final readonly class TomlKeystore
 
     protected function arrayTablesContains(string $key): bool
     {
-        return $this->arrayTables->contains($key);
+        return isset($this->arrayTablesSet[$key]);
     }
 
     /**
@@ -222,37 +253,31 @@ final readonly class TomlKeystore
         }
 
         $key = $header;
-        $index = 0;
-
-        for ($i = $this->arrayTables->count() - 1; $i >= 0; $i--) {
-            $arrayTable = $this->arrayTables[$i];
-            $arrayTableHeader = $this->makeHeaderFromArrayTable($arrayTable);
-
-            if ($arrayTableHeader === $header) {
-                $index++;
-
-                continue;
-            }
-
-            if (str_starts_with($header, $arrayTableHeader.'.')) {
-                $key = $arrayTable.substr($header, strlen($arrayTableHeader));
-
-                break;
-            }
+        $parent = $this->nearestEntry($header, false, false);
+        if ($parent !== null) {
+            $key = $parent[1].substr($header, strlen($this->makeHeaderFromArrayTable($parent[1])));
         }
+        $index = $this->arrayCounts[$key] ?? 0;
 
-        if ($index === 0 && ! $this->tables->filter(
-            static fn ($table) => str_starts_with((string) $table, $header.'.'))->isEmpty()
-        ) {
-            throw new TomlError('key duplication');
+        if ($index === 0) {
+            foreach ($this->tables as $table => $_) {
+                if (str_starts_with((string) $table, $header.'.')) {
+                    throw new TomlError('key duplication');
+                }
+            }
         }
 
         if ($this->keysContains($key) || $this->tablesContains($key)) {
             throw new TomlError('key duplication');
         }
 
+        $this->arrayCounts[$key] = $index + 1;
         $key .= ".[$index]";
-        $this->arrayTables->add($key);
-        $this->tables->add($key);
+        if (! isset($this->arrayTablesSet[$key])) {
+            $this->arrayTablesSet[$key] = true;
+            $this->arrayTables[] = $key;
+            $this->latestByHeader[$this->makeHeaderFromArrayTable($key)] = [++$this->seq, $key];
+        }
+        $this->addTable($key);
     }
 }

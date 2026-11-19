@@ -37,7 +37,7 @@ class TomlTag
                 $obj = 'inf';
             }
 
-            return ['type' => 'float', 'value' => (string) $obj];
+            return ['type' => 'float', 'value' => is_float($obj) ? var_export($obj, true) : (string) $obj];
         }
 
         if (is_bool($obj)) {

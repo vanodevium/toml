@@ -28,6 +28,10 @@ use Throwable;
  */
 final class TomlParser
 {
+    protected const MAX_DEPTH = 512;
+
+    protected int $depth = 0;
+
     protected TomlTokenizer $tokenizer;
 
     protected TomlKeystore $keystore;
@@ -41,6 +45,10 @@ final class TomlParser
      */
     public function __construct(string $input, private readonly bool $asFloat = false)
     {
+        if (! mb_check_encoding($input, 'UTF-8')) {
+            throw new TomlError('invalid UTF-8 sequence');
+        }
+
         $this->tokenizer = new TomlTokenizer($input);
         $this->keystore = new TomlKeystore;
         $this->rootTableNode = new RootTableNode([]);
@@ -192,12 +200,22 @@ final class TomlParser
     {
         $token = $this->tokenizer->next();
 
+        if ($token->type === TomlToken::LEFT_SQUARE_BRACKET || $token->type === TomlToken::LEFT_CURLY_BRACKET) {
+            if (++$this->depth > self::MAX_DEPTH) {
+                throw new TomlError('maximum nesting depth exceeded');
+            }
+
+            try {
+                return $token->type === TomlToken::LEFT_SQUARE_BRACKET ? $this->array() : $this->inlineTable();
+            } finally {
+                $this->depth--;
+            }
+        }
+
         return match ($token->type) {
             TomlToken::STRING => new StringNode($token->value),
             TomlToken::BARE => $this->booleanOrNumberOrDateOrDateTimeOrTime($token->value),
             TomlToken::PLUS => $this->plus(),
-            TomlToken::LEFT_SQUARE_BRACKET => $this->array(),
-            TomlToken::LEFT_CURLY_BRACKET => $this->inlineTable(),
             default => throw new TomlError('unexpected token type: '.$token->type),
         };
     }

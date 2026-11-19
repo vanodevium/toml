@@ -35,7 +35,7 @@ class TomlEncoder
         foreach ($arrayObject as $key => $value) {
             if (is_array($value) && array_is_list($value)) {
                 $return->{$key} = (array) self::toObject($value);
-            } elseif ($value instanceof DateTimeInterface) {
+            } elseif ($value instanceof DateTimeInterface || $value instanceof TomlDateTimeInterface) {
                 $return->{$key} = $value;
             } elseif (is_array($value) || is_object($value)) {
                 $return->{$key} = self::toObject($value);
@@ -151,11 +151,11 @@ class TomlEncoder
                 return '-inf';
             }
 
-            if ($type === 'double' && ! str_contains((string) $value, '.')) {
-                $value .= '.0';
+            if ($type === 'double') {
+                return var_export($value, true);
             }
 
-            return $value;
+            return (string) $value;
         }
 
         if ($type === 'boolean') {

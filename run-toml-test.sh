@@ -5,15 +5,10 @@
 
 skip_decode=(
     -skip='valid/key/quoted-unicode'
-	-skip='invalid/encoding/bad-utf8-in-comment'
-	-skip='invalid/encoding/bad-codepoint'
 )
 
 skip_encode=(
 	-skip='encoder/key/quoted-unicode'
-	-skip='encoder/spec-1.0.0/float-1'
-	-skip='encoder/float/max-int'
-	-skip='encoder/float/long'
 )
 
 e=0

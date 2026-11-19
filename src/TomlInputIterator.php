@@ -49,7 +49,7 @@ final class TomlInputIterator
 
         $this->pos++;
         $char = $this->input[$this->pos];
-        if ($char === "\r" && $this->input[$this->pos + 1] === "\n") {
+        if ($char === "\r" && $this->pos + 1 < $this->inputLength && $this->input[$this->pos + 1] === "\n") {
             $this->pos++;
 
             return "\n";

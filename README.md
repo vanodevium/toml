@@ -230,12 +230,9 @@ This library is tested with official [test cases](https://github.com/toml-lang/t
 There is list of skipped rules:
 
 - valid/key/quoted-unicode
-- invalid/encoding/bad-utf8-in-comment
-- invalid/encoding/bad-codepoint
 - encoder/key/quoted-unicode
-- encoder/spec-1.0.0/float-1
-- encoder/float/max-int
-- encoder/float/long
+
+Both use a key starting with a NUL byte (`"\u0000"`), which PHP objects cannot hold as a property name.
 
 ## Contributing
 
