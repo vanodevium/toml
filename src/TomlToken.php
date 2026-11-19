@@ -5,7 +5,7 @@ namespace Devium\Toml;
 /**
  * @internal
  */
-final class TomlToken
+final readonly class TomlToken
 {
     public const EOF = 'EOF';
 
@@ -38,9 +38,9 @@ final class TomlToken
     public const RIGHT_SQUARE_BRACKET = 'RIGHT_SQUARE_BRACKET';
 
     public function __construct(
-        public readonly string $type,
-        public readonly mixed $value = null,
-        public readonly bool $isMultiline = false
+        public string $type,
+        public mixed $value = null,
+        public bool $isMultiline = false
     ) {}
 
     public static function fromArray(array $from): self

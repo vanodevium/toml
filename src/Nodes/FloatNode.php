@@ -7,7 +7,7 @@ namespace Devium\Toml\Nodes;
 /**
  * @internal
  */
-final class FloatNode implements Node, NumericNode, ValuableNode
+final readonly class FloatNode implements Node, NumericNode, ValuableNode
 {
-    public function __construct(public readonly float|string $value) {}
+    public function __construct(public float|string $value) {}
 }

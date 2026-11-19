@@ -7,7 +7,7 @@ namespace Devium\Toml\Nodes;
 /**
  * @internal
  */
-final class BareNode implements Node
+final readonly class BareNode implements Node
 {
-    public function __construct(public readonly string $value) {}
+    public function __construct(public string $value) {}
 }

@@ -9,7 +9,7 @@ use Devium\Toml\TomlLocalTime;
 /**
  * @internal
  */
-final class LocalTimeNode implements Node, TomlDateTimeNode, ValuableNode
+final readonly class LocalTimeNode implements Node, TomlDateTimeNode, ValuableNode
 {
-    public function __construct(public readonly TomlLocalTime $value) {}
+    public function __construct(public TomlLocalTime $value) {}
 }

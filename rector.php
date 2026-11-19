@@ -14,7 +14,7 @@ try {
         ->withPreparedSets(
             codeQuality: true,
         )
-        ->withPhpSets(php81: true);
+        ->withPhpSets(php82: true);
 } catch (InvalidConfigurationException $e) {
 
 }

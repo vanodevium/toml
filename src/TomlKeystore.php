@@ -13,15 +13,15 @@ use Ds\Set;
 /**
  * @internal
  */
-final class TomlKeystore
+final readonly class TomlKeystore
 {
-    private readonly Set $keys;
+    private Set $keys;
 
-    private readonly Set $tables;
+    private Set $tables;
 
-    private readonly Set $arrayTables;
+    private Set $arrayTables;
 
-    private readonly Set $implicitTables;
+    private Set $implicitTables;
 
     public function __construct()
     {

@@ -7,7 +7,7 @@ namespace Devium\Toml\Nodes;
 /**
  * @internal
  */
-final class StringNode implements Node, ValuableNode
+final readonly class StringNode implements Node, ValuableNode
 {
-    public function __construct(public readonly string $value) {}
+    public function __construct(public string $value) {}
 }
