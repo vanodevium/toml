@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Devium\Toml;
 
 /**
+ * Character cursor over the input; a CRLF pair is read as a single "\n".
+ *
  * @internal
  */
 final class TomlInputIterator
@@ -17,10 +19,10 @@ final class TomlInputIterator
 
     public function __construct(public readonly string $input)
     {
-        $this->inputLength = strlen($this->input);
+        $this->inputLength = strlen($input);
     }
 
-    public function take(...$chars): bool
+    public function take(string ...$chars): bool
     {
         $char = $this->peek();
         if ($char !== self::EOF && in_array($char, $chars, true)) {
@@ -34,32 +36,40 @@ final class TomlInputIterator
 
     public function peek(): string
     {
-        $pos = $this->pos;
-        $char = $this->next();
-        $this->pos = $pos;
-
-        return $char;
-    }
-
-    public function next(): string
-    {
-        if ($this->isEOF()) {
+        $pos = $this->pos + 1;
+        if ($pos >= $this->inputLength) {
             return self::EOF;
         }
 
-        $this->pos++;
-        $char = $this->input[$this->pos];
-        if ($char === "\r" && $this->pos + 1 < $this->inputLength && $this->input[$this->pos + 1] === "\n") {
-            $this->pos++;
-
+        $char = $this->input[$pos];
+        if ($char === "\r" && $pos + 1 < $this->inputLength && $this->input[$pos + 1] === "\n") {
             return "\n";
         }
 
         return $char;
     }
 
+    public function next(): string
+    {
+        $pos = $this->pos + 1;
+        if ($pos >= $this->inputLength) {
+            return self::EOF;
+        }
+
+        $char = $this->input[$pos];
+        if ($char === "\r" && $pos + 1 < $this->inputLength && $this->input[$pos + 1] === "\n") {
+            $this->pos = $pos + 1;
+
+            return "\n";
+        }
+
+        $this->pos = $pos;
+
+        return $char;
+    }
+
     public function isEOF(): bool
     {
-        return $this->pos + 1 === $this->inputLength;
+        return $this->pos + 1 >= $this->inputLength;
     }
 }

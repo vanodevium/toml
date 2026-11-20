@@ -15,40 +15,36 @@ class TomlDecoder
      */
     public static function decode(string $input, bool $asArray = false, bool $asFloat = false): array|stdClass
     {
-        $parser = new TomlParser($input, $asFloat);
+        $normalized = TomlNormalizer::normalize((new TomlParser($input, $asFloat))->parse());
 
-        if ($asArray) {
-            return self::toArray(TomlNormalizer::normalize($parser->parse()));
-        }
-
-        return self::toObject(TomlNormalizer::normalize($parser->parse()));
+        return $asArray ? self::toArray($normalized) : self::toObject($normalized);
     }
 
-    protected static function toArray(mixed $object): mixed
+    protected static function toArray(mixed $value): mixed
     {
-        if ($object instanceof DateTimeInterface) {
-            return $object;
+        if ($value instanceof DateTimeInterface || $value instanceof TomlInternalDateTime) {
+            return $value;
         }
 
-        if ($object instanceof TomlInternalDateTime) {
-            return $object;
+        if (is_array($value) || is_object($value)) {
+            $array = [];
+            foreach ((array) $value as $key => $item) {
+                $array[$key] = self::toArray($item);
+            }
+
+            return $array;
         }
 
-        if (is_array($object) || is_object($object)) {
-            return array_map(self::toArray(...), (array) $object);
-        }
-
-        return $object;
+        return $value;
     }
 
-    protected static function toObject(array|TomlObject $arrayObject): array|object
+    protected static function toObject(array|TomlObject $value): array|object
     {
-        $return = [];
-
-        foreach ($arrayObject as $key => $value) {
-            $return[$key] = $value instanceof TomlObject || is_array($value) ? self::toObject($value) : $value;
+        $result = [];
+        foreach ($value as $key => $item) {
+            $result[$key] = $item instanceof TomlObject || is_array($item) ? self::toObject($item) : $item;
         }
 
-        return is_array($arrayObject) ? $return : (object) $return;
+        return is_array($value) ? $result : (object) $result;
     }
 }

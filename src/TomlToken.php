@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Devium\Toml;
 
 /**
@@ -42,13 +44,4 @@ final readonly class TomlToken
         public mixed $value = null,
         public bool $isMultiline = false
     ) {}
-
-    public static function fromArray(array $from): self
-    {
-        $type = $from['type'];
-        $value = $from['value'] ?? null;
-        $isMultiline = $from['isMultiline'] ?? false;
-
-        return new self($type, $value, $isMultiline);
-    }
 }

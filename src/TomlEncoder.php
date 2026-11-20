@@ -47,22 +47,17 @@ class TomlEncoder
         return $return;
     }
 
+    /**
+     * gettype() with "date" for date-times and lists/maps told apart as "array"/"object".
+     */
     protected static function extendedTypeOf(mixed $obj): string
     {
-        if ($obj instanceof TomlDateTimeInterface) {
+        if ($obj instanceof TomlDateTimeInterface || $obj instanceof DateTimeInterface) {
             return 'date';
-        }
-
-        if ($obj instanceof DateTimeInterface) {
-            return 'date';
-        }
-
-        if (is_array($obj) && array_is_list($obj)) {
-            return 'array';
         }
 
         if (is_array($obj)) {
-            return 'object';
+            return array_is_list($obj) ? 'array' : 'object';
         }
 
         return gettype($obj);
@@ -73,33 +68,35 @@ class TomlEncoder
      */
     protected static function stringifyTable(object $obj, string $prefix = ''): string
     {
+        // key/value pairs go first, then sub-tables and arrays of tables
         $preamble = '';
         $tables = '';
-        $keys = array_keys((array) $obj);
-        foreach ($keys as $k) {
-
-            if ($obj->{$k} === null) {
+        foreach (array_keys((array) $obj) as $k) {
+            $value = $obj->{$k};
+            if ($value === null) {
                 continue;
             }
 
-            $type = self::extendedTypeOf($obj->{$k});
-            $key = preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
-            if ($type === 'array' && self::isArrayOfTables($obj->{$k})) {
-                $tables .= self::stringifyArrayTable($obj->{$k}, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
+            $type = self::extendedTypeOf($value);
+            $key = self::formatKey($k);
+            if ($type === 'array' && self::isArrayOfTables($value)) {
+                $tables .= self::stringifyArrayTable($value, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
             } elseif ($type === 'object') {
                 $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
                 $tables .= "[$tblKey]\n";
-                $tables .= self::stringifyTable($obj->{$k}, $tblKey);
+                $tables .= self::stringifyTable($value, $tblKey);
                 $tables .= "\n\n";
             } else {
-                $preamble .= $key;
-                $preamble .= ' = ';
-                $preamble .= self::stringifyValue($obj->{$k}, $type);
-                $preamble .= "\n";
+                $preamble .= "$key = ".self::stringifyValue($value, $type)."\n";
             }
         }
 
         return trim("$preamble\n$tables");
+    }
+
+    protected static function formatKey(int|string $key): string
+    {
+        return preg_match(self::BARE_KEY, (string) $key) ? (string) $key : self::formatString((string) $key);
     }
 
     protected static function formatString(string $s): string
@@ -194,21 +191,12 @@ class TomlEncoder
      */
     protected static function stringifyInlineTable(array|stdClass $obj): string
     {
-        $keys = array_keys((array) $obj);
-        if ($keys === []) {
-            return '{}';
-        }
-        $res = '{ ';
-        foreach ($keys as $i => $k) {
-            if ($i !== 0) {
-                $res .= ', ';
-            }
-            $res .= preg_match(self::BARE_KEY, $k) ? $k : self::formatString($k);
-            $res .= ' = ';
-            $res .= self::stringifyValue($obj->{$k});
+        $pairs = [];
+        foreach (array_keys((array) $obj) as $k) {
+            $pairs[] = self::formatKey($k).' = '.self::stringifyValue($obj->{$k});
         }
 
-        return $res.' }';
+        return $pairs === [] ? '{}' : '{ '.implode(', ', $pairs).' }';
     }
 
     /**

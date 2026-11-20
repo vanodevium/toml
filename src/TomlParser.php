@@ -30,6 +30,17 @@ final class TomlParser
 {
     protected const MAX_DEPTH = 512;
 
+    /** characters a numeric value may consist of */
+    private const NUMERIC_CHARS = '+-.0123456789ABCDEFOX_abcdefox';
+
+    /** allowed digits per radix; base 16 accepts any letter here, the hexadecimal format is checked separately */
+    private const DIGITS = [
+        2 => '01',
+        8 => '01234567',
+        10 => '0123456789',
+        16 => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+    ];
+
     protected int $depth = 0;
 
     protected TomlTokenizer $tokenizer;
@@ -61,17 +72,10 @@ final class TomlParser
     public function parse(): RootTableNode
     {
         try {
-            for (; ;) {
-                $node = $this->expression();
-                if (! $node) {
-                    break;
-                }
-
-                $this->tokenizer->take(TomlToken::WHITESPACE);
-                $this->tokenizer->take(TomlToken::COMMENT);
-                $this->tokenizer->assert(TomlToken::NEWLINE, TomlToken::EOF);
+            while ($node = $this->expression()) {
+                $this->endOfLine();
                 $this->keystore->addNode($node);
-                if (in_array($node::class, [TableNode::class, ArrayTableNode::class])) {
+                if ($node instanceof TableNode) {
                     $this->tableNode = $node;
                     $this->rootTableNode->addElement($node);
                 } else {
@@ -95,9 +99,8 @@ final class TomlParser
     protected function expression(): KeyValuePairNode|TableNode|ArrayTableNode|null
     {
         $this->takeCommentsAndNewlines();
-        $token = $this->tokenizer->peek();
 
-        return match ($token->type) {
+        return match ($this->tokenizer->peek()->type) {
             TomlToken::LEFT_SQUARE_BRACKET => $this->table(),
             TomlToken::EOF => null,
             default => $this->keyValuePair(),
@@ -105,23 +108,60 @@ final class TomlParser
     }
 
     /**
+     * Takes optional whitespace and comment, then a newline or EOF.
+     *
+     * @throws TomlError
+     */
+    protected function endOfLine(): void
+    {
+        $tokenizer = $this->tokenizer;
+        $type = $tokenizer->peek()->type;
+        if ($type === TomlToken::WHITESPACE) {
+            $tokenizer->skip();
+            $type = $tokenizer->peek()->type;
+        }
+        if ($type === TomlToken::COMMENT) {
+            $tokenizer->skip();
+            $type = $tokenizer->peek()->type;
+        }
+        if ($type !== TomlToken::NEWLINE && $type !== TomlToken::EOF) {
+            throw new TomlError('unexpected assertion');
+        }
+        $tokenizer->skip();
+    }
+
+    /**
+     * Skips empty lines, whitespace and comments; a comment is followed by a newline or EOF.
+     *
      * @throws TomlError
      */
     protected function takeCommentsAndNewlines(): void
     {
+        $tokenizer = $this->tokenizer;
         for (; ;) {
-            $this->tokenizer->take(TomlToken::WHITESPACE);
-            if ($this->tokenizer->take(TomlToken::COMMENT)) {
-                if ($this->tokenizer->isEOF()) {
+            $type = $tokenizer->peek()->type;
+            if ($type === TomlToken::WHITESPACE) {
+                $tokenizer->skip();
+                $type = $tokenizer->peek()->type;
+            }
+
+            if ($type === TomlToken::COMMENT) {
+                $tokenizer->skip();
+                if ($tokenizer->isEOF()) {
                     break;
                 }
-                $this->tokenizer->assert(TomlToken::NEWLINE);
+                if ($tokenizer->peek()->type !== TomlToken::NEWLINE) {
+                    throw new TomlError('unexpected assertion');
+                }
+                $tokenizer->skip();
 
                 continue;
             }
-            if (! $this->tokenizer->take(TomlToken::NEWLINE)) {
+
+            if ($type !== TomlToken::NEWLINE) {
                 break;
             }
+            $tokenizer->skip();
         }
     }
 
@@ -149,11 +189,14 @@ final class TomlParser
      */
     protected function key(): KeyNode
     {
+        $tokenizer = $this->tokenizer;
         $keyNode = new KeyNode([]);
 
         do {
-            $this->tokenizer->take(TomlToken::WHITESPACE);
-            $token = $this->tokenizer->next();
+            if ($tokenizer->peek()->type === TomlToken::WHITESPACE) {
+                $tokenizer->skip();
+            }
+            $token = $tokenizer->next();
 
             switch ($token->type) {
                 case TomlToken::BARE:
@@ -174,8 +217,15 @@ final class TomlParser
                     throw new TomlError('unexpected token type: '.$token->type);
             }
 
-            $this->tokenizer->take(TomlToken::WHITESPACE);
-        } while ($this->tokenizer->take(TomlToken::PERIOD));
+            $type = $tokenizer->peek()->type;
+            if ($type === TomlToken::WHITESPACE) {
+                $tokenizer->skip();
+                $type = $tokenizer->peek()->type;
+            }
+            if ($type === TomlToken::PERIOD) {
+                $tokenizer->skip();
+            }
+        } while ($type === TomlToken::PERIOD);
 
         return $keyNode;
     }
@@ -229,7 +279,8 @@ final class TomlParser
             return new BooleanNode($value === 'true');
         }
 
-        if (str_contains(substr($value, 1), '-') && ! str_contains(strtolower($value), 'e-')) {
+        // a dash after the first character means a date, unless it is a negative exponent
+        if (strpos($value, '-', 1) !== false && stripos($value, 'e-') === false) {
             return $this->dateOrDateTime($value);
         }
 
@@ -260,25 +311,20 @@ final class TomlParser
             $value .= $token->value;
         }
 
-        if (! str_contains(strtolower($value), 't')) {
+        if (stripos($value, 't') === false) {
             return new LocalDateNode(TomlLocalDate::fromString($value));
         }
 
-        $tokens = $this->tokenizer->sequence(
-            TomlToken::COLON,
-            TomlToken::BARE,
-            TomlToken::COLON,
-            TomlToken::BARE,
-        );
-        $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
+        // hour is in $value already, read ":mm:ss..."
+        $value .= $this->tokenizer->concat(TomlToken::COLON, TomlToken::BARE, TomlToken::COLON);
+        $seconds = $this->tokenizer->expect(TomlToken::BARE)->value;
+        $value .= $seconds;
 
-        $lastTokenValue = strtolower($tokens[count($tokens) - 1]->value);
-
-        if (str_ends_with($lastTokenValue, 'z')) {
+        if (str_ends_with($seconds, 'z') || str_ends_with($seconds, 'Z')) {
             return new OffsetDateTimeNode($this->parseDate($value));
         }
 
-        if (str_contains($lastTokenValue, '-')) {
+        if (str_contains($seconds, '-')) {
             $this->tokenizer->assert(TomlToken::COLON);
             $token = $this->tokenizer->expect(TomlToken::BARE);
             $value .= ':';
@@ -291,9 +337,8 @@ final class TomlParser
 
         if ($tokenType === TomlToken::PLUS) {
             $this->tokenizer->next();
-            $tokens = $this->tokenizer->sequence(TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
             $value .= '+';
-            $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
+            $value .= $this->tokenizer->concat(TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
 
             return new OffsetDateTimeNode($this->parseDate($value));
         }
@@ -304,11 +349,11 @@ final class TomlParser
             $value .= '.';
             $value .= $token->value;
 
-            if (str_ends_with((string) $token->value, 'Z')) {
+            if (str_ends_with($token->value, 'Z')) {
                 return new OffsetDateTimeNode($this->parseDate($value));
             }
 
-            if (str_contains((string) $token->value, '-')) {
+            if (str_contains($token->value, '-')) {
                 $this->tokenizer->assert(TomlToken::COLON);
                 $token = $this->tokenizer->expect(TomlToken::BARE);
                 $value .= ':';
@@ -318,9 +363,8 @@ final class TomlParser
             }
 
             if ($this->tokenizer->take(TomlToken::PLUS)) {
-                $tokens = $this->tokenizer->sequence(TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
                 $value .= '+';
-                $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
+                $value .= $this->tokenizer->concat(TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
 
                 return new OffsetDateTimeNode($this->parseDate($value));
             }
@@ -332,7 +376,7 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    protected function parseDate($value): TomlDateTime
+    protected function parseDate(string $value): TomlDateTime
     {
         try {
             return new TomlDateTime($value);
@@ -344,15 +388,9 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    protected function time($value): LocalTimeNode
+    protected function time(string $value): LocalTimeNode
     {
-        $tokens = $this->tokenizer->sequence(
-            TomlToken::COLON,
-            TomlToken::BARE,
-            TomlToken::COLON,
-            TomlToken::BARE,
-        );
-        $value .= implode('', array_map(static fn (TomlToken $token) => $token->value, $tokens));
+        $value .= $this->tokenizer->concat(TomlToken::COLON, TomlToken::BARE, TomlToken::COLON, TomlToken::BARE);
         if ($this->tokenizer->take(TomlToken::PERIOD)) {
             $token = $this->tokenizer->expect(TomlToken::BARE);
             $value .= '.';
@@ -365,24 +403,16 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    protected function number($value): IntegerNode|FloatNode
+    protected function number(string $value): IntegerNode|FloatNode
     {
-        $result = match ($value) {
-            'inf', '+inf' => new FloatNode(INF),
-            '-inf' => new FloatNode(-INF),
-            'nan', '+nan', '-nan' => new FloatNode(NAN),
-            default => null,
-        };
-
-        if ($result instanceof FloatNode) {
-            return $result;
-        }
-
         return match (true) {
-            str_starts_with((string) $value, '0x') => $this->integer($value, 16),
-            str_starts_with((string) $value, '0o') => $this->integer($value, 8),
-            str_starts_with((string) $value, '0b') => $this->integer($value, 2),
-            str_contains(strtolower((string) $value), 'e') => $this->float($value),
+            $value === 'inf', $value === '+inf' => new FloatNode(INF),
+            $value === '-inf' => new FloatNode(-INF),
+            $value === 'nan', $value === '+nan', $value === '-nan' => new FloatNode(NAN),
+            str_starts_with($value, '0x') => $this->integer($value, 16),
+            str_starts_with($value, '0o') => $this->integer($value, 8),
+            str_starts_with($value, '0b') => $this->integer($value, 2),
+            stripos($value, 'e') !== false => $this->float($value),
             $this->tokenizer->peek()->type === TomlToken::PERIOD => $this->float($value),
             default => $this->integer($value, 10),
         };
@@ -391,87 +421,85 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    protected function integer($value, $radix): IntegerNode
+    protected function integer(string $value, int $radix): IntegerNode
     {
-        $isSignAllowed = $radix === 10;
-        $areLeadingZerosAllowed = $radix !== 10;
-        $int = $this->parseInteger($value, $isSignAllowed, $areLeadingZerosAllowed, false, $radix)['int'];
+        $isDecimal = $radix === 10;
 
-        return new IntegerNode($int);
+        return new IntegerNode($this->parseInteger($value, $isDecimal, ! $isDecimal, false, $radix)['int']);
     }
 
     /**
+     * Reads the leading integer part of $value; whatever follows it is returned as "unparsed".
+     *
+     * @return array{int: int|string, unparsed: string, sign: string}
+     *
      * @throws TomlError
      */
     protected function parseInteger(
-        $value, $isSignAllowed, $areLeadingZerosAllowed, $isUnparsedAllowed, $radix, bool $asString = false
+        string $value,
+        bool $isSignAllowed,
+        bool $areLeadingZerosAllowed,
+        bool $isUnparsedAllowed,
+        int $radix,
+        bool $asString = false,
     ): array {
+        $length = strlen($value);
 
-        if (preg_match('/[^0-9-+._oxabcdef]/i', (string) $value)) {
+        if (strspn($value, self::NUMERIC_CHARS) !== $length) {
             throw new TomlError('unexpected non-numeric value');
         }
 
         $sign = '';
         $i = 0;
-        if ($value[$i] === '+' || $value[$i] === '-') {
+        if ($value[0] === '+' || $value[0] === '-') {
             if (! $isSignAllowed) {
                 throw new TomlError('unexpected sign (+/-)');
             }
-            $sign = $value[$i];
+            $sign = $value[0];
             $i++;
         }
 
-        if (! $areLeadingZerosAllowed && $value[$i] === '0' && ($i + 1) !== strlen((string) $value)) {
+        if (! $areLeadingZerosAllowed && $value[$i] === '0' && $i + 1 !== $length) {
             throw new TomlError('unexpected leading zero');
         }
 
-        if (preg_match('/[+-]?0[obx](_|$)/im', (string) $value)) {
+        // a radix prefix not followed by a digit
+        if (strpbrk($value, 'obxOBX') !== false && preg_match('/0[obx](_|$)/i', $value)) {
             throw new TomlError('unexpected number formatting');
         }
 
-        if (str_starts_with((string) $value, '0x') && ! preg_match('/^0[xX][0-9a-fA-F_]+$/', (string) $value)) {
+        if (str_starts_with($value, '0x') && ! preg_match('/^0[xX][0-9a-fA-F_]+$/', $value)) {
             throw new TomlError('unexpected binary number formatting');
         }
 
-        $isUnderscoreAllowed = false;
-        $valueLength = strlen((string) $value);
-        for (; $i < $valueLength; $i++) {
-            $char = $value[$i];
-            if ($char === '_') {
-                if (! $isUnderscoreAllowed) {
-                    throw new TomlError('unexpected underscore symbol');
-                }
-                $isUnderscoreAllowed = false;
-
-                continue;
-            }
-
-            $octalOrBinary = ($radix === 8 && $char === 'o') || ($radix === 2 && $char === 'b');
-            if (($i !== 1 || ! $octalOrBinary) && ! $this->digitalChecks($radix, $char)) {
-                break;
-            }
-
-            $isUnderscoreAllowed = true;
+        // the run of digits and underscores, including the "o"/"b" of a 0o/0b prefix
+        $allowed = self::DIGITS[$radix].'_';
+        $end = $i + strspn($value, $allowed, $i);
+        $prefix = match ($radix) {
+            8 => 'o',
+            2 => 'b',
+            default => '',
+        };
+        if ($end === 1 && $prefix !== '' && $length > 1 && $value[1] === $prefix) {
+            $end = 2 + strspn($value, $allowed, 2);
         }
 
-        if (! $isUnderscoreAllowed) {
+        // an underscore must sit between two digits
+        $digits = substr($value, $i, $end - $i);
+        if ($digits === '' || $digits[0] === '_' || $digits[-1] === '_' || str_contains($digits, '__')) {
             throw new TomlError('unexpected underscore symbol');
         }
+        $i = $end;
 
-        $int = str_replace('_', '', TomlUtils::stringSlice($value, 0, $i));
-        $unparsed = TomlUtils::stringSlice($value, $i);
-
+        $unparsed = substr($value, $i);
         if (! $isUnparsedAllowed && $unparsed !== '') {
             throw new TomlError('unexpected unparsed part of numeric value');
         }
 
-        $int = str_replace('0o', '0', $int);
-        if (! $asString) {
-            $int = intval($int, 0);
-        }
+        $int = str_replace(['_', '0o'], ['', '0'], substr($value, 0, $i));
 
         return [
-            'int' => $int,
+            'int' => $asString ? $int : intval($int, 0),
             'unparsed' => $unparsed,
             'sign' => $sign,
         ];
@@ -480,21 +508,7 @@ final class TomlParser
     /**
      * @throws TomlError
      */
-    protected function digitalChecks($radix, $value): bool
-    {
-        return match ($radix) {
-            16 => TomlUtils::isHexadecimal($value),
-            10 => TomlUtils::isDecimal($value),
-            8 => TomlUtils::isOctal($value),
-            2 => TomlUtils::isBinary($value),
-            default => throw new TomlError('unexpected radix value'),
-        };
-    }
-
-    /**
-     * @throws TomlError
-     */
-    protected function float($value): FloatNode
+    protected function float(string $value): FloatNode
     {
         $parsed = $this->parseInteger($value, true, true, true, 10);
         $float = $parsed['int'];
@@ -502,7 +516,7 @@ final class TomlParser
         $sign = $parsed['sign'];
 
         if ($this->tokenizer->take(TomlToken::PERIOD)) {
-            if (preg_match('/^[+-]?0\d+/m', (string) $value)) {
+            if (preg_match('/^[+-]?0\d/', $value)) {
                 throw new TomlError('unexpected float formatting');
             }
 
@@ -523,14 +537,14 @@ final class TomlParser
             return new FloatNode($this->asFloat ? (float) $float : $float);
         }
 
-        if (! str_starts_with((string) $unparsed, 'e') && ! str_starts_with((string) $unparsed, 'E')) {
+        if ($unparsed[0] !== 'e' && $unparsed[0] !== 'E') {
             throw new TomlError('unexpected unparsed part of float value');
         }
 
         $float .= 'e';
 
-        if (strlen((string) $unparsed) !== 1) {
-            $float .= $this->parseInteger(substr((string) $unparsed, 1), true, true, false, 10)['int'];
+        if ($unparsed !== 'e' && $unparsed !== 'E') {
+            $float .= $this->parseInteger(substr($unparsed, 1), true, true, false, 10)['int'];
 
             return new FloatNode((float) $float);
         }
@@ -567,8 +581,7 @@ final class TomlParser
                 break;
             }
 
-            $value = $this->value();
-            $arrayNode->addElement($value);
+            $arrayNode->addElement($this->value());
             $this->takeCommentsAndNewlines();
 
             if (! $this->tokenizer->take(TomlToken::COMMA)) {

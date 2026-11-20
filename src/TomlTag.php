@@ -88,45 +88,22 @@ class TomlTag
         }
 
         if (property_exists($obj, 'type') && property_exists($obj, 'value') && count(get_object_vars($obj)) === 2) {
-            switch ($obj->type) {
-                case 'string':
-                    return $obj->value;
-                case 'bool':
-                    return $obj->value === 'true';
-                case 'integer':
-                    return (int) $obj->value;
-                case 'float':
-                    if ($obj->value === 'nan') {
-                        return NAN;
-                    }
-                    if ($obj->value === '+nan') {
-                        return NAN;
-                    }
-                    if ($obj->value === '-nan') {
-                        return NAN;
-                    }
-                    if ($obj->value === 'inf') {
-                        return INF;
-                    }
-                    if ($obj->value === '+inf') {
-                        return INF;
-                    }
-                    if ($obj->value === '-inf') {
-                        return -INF;
-                    }
-
-                    return (float) $obj->value;
-                case 'datetime':
-                    return new TomlDateTime($obj->value);
-                case 'datetime-local':
-                    return TomlLocalDateTime::fromString($obj->value);
-                case 'date-local':
-                    return TomlLocalDate::fromString($obj->value);
-                case 'time-local':
-                    return TomlLocalTime::fromString($obj->value);
-            }
-
-            throw new TomlError('cannot untag object');
+            return match ($obj->type) {
+                'string' => $obj->value,
+                'bool' => $obj->value === 'true',
+                'integer' => (int) $obj->value,
+                'float' => match ($obj->value) {
+                    'nan', '+nan', '-nan' => NAN,
+                    'inf', '+inf' => INF,
+                    '-inf' => -INF,
+                    default => (float) $obj->value,
+                },
+                'datetime' => new TomlDateTime($obj->value),
+                'datetime-local' => TomlLocalDateTime::fromString($obj->value),
+                'date-local' => TomlLocalDate::fromString($obj->value),
+                'time-local' => TomlLocalTime::fromString($obj->value),
+                default => throw new TomlError('cannot untag object'),
+            };
         }
 
         $res = new stdClass;

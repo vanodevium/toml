@@ -35,19 +35,27 @@ final class TomlError extends Exception
         parent::__construct("Invalid TOML document: $message\n\n$codeBlock");
     }
 
-    protected function getLineColFromPosition($string, $position): array
+    /**
+     * @return array{int, int} 1-based line and 0-based column
+     */
+    protected function getLineColFromPosition(string $string, int $position): array
     {
-        $lines = preg_split(self::RE, TomlUtils::stringSlice($string, 0, $position));
+        // position 0 has always measured the whole input
+        $lines = preg_split(self::RE, $position === 0 ? $string : substr($string, 0, $position));
 
-        return [count($lines), strlen((string) array_pop($lines))];
+        return [count($lines), strlen(array_pop($lines))];
     }
 
-    protected function makeCodeBlock($string, $line, $column): string
+    /**
+     * Renders the lines around $line with a caret under $column.
+     */
+    protected function makeCodeBlock(string $string, int $line, int $column): string
     {
-        $lines = preg_split(self::RE, (string) $string);
+        $lines = preg_split(self::RE, $string);
         $codeBlock = '';
 
-        $numberLen = ((int) log10($line + 1) | 0) + 1;
+        // width of the largest printed line number
+        $numberLen = strlen((string) ($line + 1));
 
         for ($i = $line - 1; $i <= $line + 1; $i++) {
             $l = $lines[$i - 1] ?? null;
@@ -55,7 +63,7 @@ final class TomlError extends Exception
                 continue;
             }
 
-            $codeBlock .= str_pad($i, $numberLen).":  $l\n";
+            $codeBlock .= str_pad((string) $i, $numberLen).":  $l\n";
 
             if ($i === $line) {
                 $codeBlock .= ' '.str_repeat(' ', $numberLen + $column + 2)."^\n";

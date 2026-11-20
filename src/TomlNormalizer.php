@@ -32,31 +32,25 @@ final class TomlNormalizer
         switch ($node::class) {
             case InlineTableNode::class:
             case RootTableNode::class:
-                $elements = self::mapNormalize($node->elements());
-
-                return self::merge(...$elements);
+                return self::merge(self::mapNormalize($node->elements()));
 
             case KeyNode::class:
                 return self::mapNormalize($node->keys());
 
             case KeyValuePairNode::class:
-
-                $key = self::normalize($node->key);
-                $value = self::normalize($node->value);
-
-                return self::objectify($key, $value);
+                return self::objectify(self::normalize($node->key), self::normalize($node->value));
 
             case TableNode::class:
-                $key = self::normalize($node->key);
-                $elements = self::mapNormalize($node->elements());
-
-                return self::objectify($key, self::merge(...$elements));
+                return self::objectify(
+                    self::normalize($node->key),
+                    self::merge(self::mapNormalize($node->elements())),
+                );
 
             case ArrayTableNode::class:
-                $key = self::normalize($node->key);
-                $elements = self::mapNormalize($node->elements());
-
-                return self::objectify($key, [self::merge(...$elements)]);
+                return self::objectify(
+                    self::normalize($node->key),
+                    [self::merge(self::mapNormalize($node->elements()))],
+                );
 
             case ArrayNode::class:
                 return self::mapNormalize($node->elements());
@@ -82,15 +76,22 @@ final class TomlNormalizer
      */
     protected static function mapNormalize(array $items): array
     {
-        return array_map(self::normalize(...), $items);
+        $normalized = [];
+        foreach ($items as $item) {
+            $normalized[] = self::normalize($item);
+        }
+
+        return $normalized;
     }
 
     /**
+     * @param  array<array|object>  $values
+     *
      * @throws TomlError
      */
-    protected static function merge(...$values): TomlObject
+    protected static function merge(array $values): TomlObject
     {
-        $acc = new TomlObject([]);
+        $acc = new TomlObject;
         foreach ($values as $value) {
             self::mergeInto($acc, $value);
         }
@@ -103,11 +104,10 @@ final class TomlNormalizer
      *
      * @throws TomlError
      */
-    protected static function mergeInto(TomlObject $acc, $value): void
+    protected static function mergeInto(TomlObject $acc, array|object $value): void
     {
         foreach ($value as $key => $nextValue) {
-
-            $prevValue = $acc->offsetExists($key) ? $acc->offsetGet($key) : null;
+            $prevValue = $acc[$key] ?? null;
 
             if (is_array($prevValue) && is_array($nextValue)) {
                 $acc->offsetSet($key, null); // drop the storage reference so the append below does not copy
@@ -129,30 +129,23 @@ final class TomlNormalizer
         }
     }
 
-    protected static function isKeyValuePair($value): bool
+    protected static function isKeyValuePair(mixed $value): bool
     {
-        if ($value instanceof TomlInternalDateTime) {
-            return false;
-        }
-
-        return is_object($value);
+        return is_object($value) && ! $value instanceof TomlInternalDateTime;
     }
 
     /**
      * @param  string[]  $keys
      */
-    protected static function objectify(array $keys, $value): TomlObject
+    protected static function objectify(array $keys, mixed $value): TomlObject
     {
-        $initialValue = new TomlObject([]);
-        $object = &$initialValue;
-        foreach (array_slice($keys, 0, -1) as $prop) {
-            $object[$prop] = new TomlObject([]);
-            $object = &$object[$prop];
+        // build from the innermost key outwards: a.b.c = v  =>  {a: {b: {c: v}}}
+        for ($i = count($keys) - 1; $i >= 0; $i--) {
+            $object = new TomlObject;
+            $object[$keys[$i]] = $value;
+            $value = $object;
         }
 
-        $key = array_pop($keys);
-        $object->{$key} = $value;
-
-        return $initialValue;
+        return $value;
     }
 }
