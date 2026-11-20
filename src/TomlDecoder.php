@@ -27,12 +27,7 @@ class TomlDecoder
         }
 
         if (is_array($value) || is_object($value)) {
-            $array = [];
-            foreach ((array) $value as $key => $item) {
-                $array[$key] = self::toArray($item);
-            }
-
-            return $array;
+            return array_map(self::toArray(...), (array) $value);
         }
 
         return $value;
@@ -40,10 +35,10 @@ class TomlDecoder
 
     protected static function toObject(array|TomlObject $value): array|object
     {
-        $result = [];
-        foreach ($value as $key => $item) {
-            $result[$key] = $item instanceof TomlObject || is_array($item) ? self::toObject($item) : $item;
-        }
+        $result = array_map(
+            static fn ($item) => $item instanceof TomlObject || is_array($item) ? self::toObject($item) : $item,
+            is_array($value) ? $value : $value->getArrayCopy(),
+        );
 
         return is_array($value) ? $result : (object) $result;
     }

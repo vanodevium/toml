@@ -161,7 +161,7 @@ final class TomlKeystore
         if ($index === 0) {
             $prefix = "$header.";
             foreach ($this->tables as $table => $_) {
-                if (str_starts_with((string) $table, $prefix)) {
+                if (str_starts_with($table, $prefix)) {
                     throw new TomlError('key duplication');
                 }
             }

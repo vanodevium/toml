@@ -70,7 +70,7 @@ final class TomlTokenizer
 
         if (! self::$eofToken instanceof TomlToken) {
             foreach (self::PUNCTUATOR_OR_NEWLINE_TOKENS as $char => $type) {
-                self::$punctuatorTokens[$char] = new TomlToken($type, (string) $char);
+                self::$punctuatorTokens[$char] = new TomlToken($type, $char);
             }
             self::$eofToken = new TomlToken(TomlToken::EOF);
         }
@@ -334,9 +334,7 @@ final class TomlTokenizer
 
         // line ending backslash: trim all whitespace and newlines up to the next character
         if ($isMultiline && (in_array($char, [' ', "\t", "\n"], true))) {
-            while ($iterator->take(' ', "\t", "\n")) {
-                // skip
-            }
+            $iterator->skip(" \t\n");
 
             return '';
         }

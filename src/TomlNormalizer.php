@@ -29,46 +29,22 @@ final class TomlNormalizer
      */
     public static function normalize(Nodes\Node $node): mixed
     {
-        switch ($node::class) {
-            case InlineTableNode::class:
-            case RootTableNode::class:
-                return self::merge(self::mapNormalize($node->elements()));
-
-            case KeyNode::class:
-                return self::mapNormalize($node->keys());
-
-            case KeyValuePairNode::class:
-                return self::objectify(self::normalize($node->key), self::normalize($node->value));
-
-            case TableNode::class:
-                return self::objectify(
-                    self::normalize($node->key),
-                    self::merge(self::mapNormalize($node->elements())),
-                );
-
-            case ArrayTableNode::class:
-                return self::objectify(
-                    self::normalize($node->key),
-                    [self::merge(self::mapNormalize($node->elements()))],
-                );
-
-            case ArrayNode::class:
-                return self::mapNormalize($node->elements());
-
-            case OffsetDateTimeNode::class:
-            case LocalDateTimeNode::class:
-            case LocalDateNode::class:
-            case LocalTimeNode::class:
-            case BareNode::class:
-            case StringNode::class:
-            case IntegerNode::class:
-            case FloatNode::class:
-            case BooleanNode::class:
-                return $node->value;
-
-            default:
-                throw new TomlError('unsupported type: '.$node::class);
-        }
+        return match ($node::class) {
+            InlineTableNode::class, RootTableNode::class => self::merge(self::mapNormalize($node->elements())),
+            KeyNode::class => self::mapNormalize($node->keys()),
+            KeyValuePairNode::class => self::objectify(self::normalize($node->key), self::normalize($node->value)),
+            TableNode::class => self::objectify(
+                self::normalize($node->key),
+                self::merge(self::mapNormalize($node->elements())),
+            ),
+            ArrayTableNode::class => self::objectify(
+                self::normalize($node->key),
+                [self::merge(self::mapNormalize($node->elements()))],
+            ),
+            ArrayNode::class => self::mapNormalize($node->elements()),
+            OffsetDateTimeNode::class, LocalDateTimeNode::class, LocalDateNode::class, LocalTimeNode::class, BareNode::class, StringNode::class, IntegerNode::class, FloatNode::class, BooleanNode::class => $node->value,
+            default => throw new TomlError('unsupported type: '.$node::class),
+        };
     }
 
     /**

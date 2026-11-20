@@ -34,6 +34,24 @@ final class TomlInputIterator
         return false;
     }
 
+    /**
+     * Moves past the run of $chars that starts at the next character. When $chars has "\n",
+     * a CRLF pair counts as one too; a lone "\r" stops the run.
+     */
+    public function skip(string $chars): void
+    {
+        $pos = $this->pos + 1;
+        $pos += strspn($this->input, $chars, $pos);
+        if (str_contains($chars, "\n")) {
+            while (substr_compare($this->input, "\r\n", $pos, 2) === 0) {
+                $pos += 2;
+                $pos += strspn($this->input, $chars, $pos);
+            }
+        }
+
+        $this->pos = $pos - 1;
+    }
+
     public function peek(): string
     {
         $pos = $this->pos + 1;

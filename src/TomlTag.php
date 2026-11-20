@@ -81,7 +81,7 @@ class TomlTag
      * @throws Throwable
      * @throws TomlError
      */
-    public static function untagObject($obj)
+    public static function untagObject($obj): mixed
     {
         if (is_array($obj)) {
             return array_map(self::untagObject(...), $obj);

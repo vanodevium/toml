@@ -249,3 +249,34 @@ it('accepts unicode escapes at the scalar value boundaries', function (string $e
     'after the surrogates' => ['', "\u{E000}"],
     'U+10FFFF' => ['\U0010FFFF', "\u{10FFFF}"],
 ]);
+
+it('trims whitespace and newlines after a line ending backslash', function (string $toml, string $expected) {
+    expect(toml_decode($toml, true))->toBe(['a' => $expected]);
+})->with([
+    'LF' => ["a = \"\"\"x\\\n \t\n\t y\"\"\"\n", 'xy'],
+    'CRLF' => ["a = \"\"\"x\\\r\n \t\r\n\t y\"\"\"\r\n", 'xy'],
+    'mixed' => ["a = \"\"\"x\\\r\n\n \r\ny\"\"\"\n", 'xy'],
+    'up to the closing delimiter' => ["a = \"\"\"x\\\n \"\"\"\n", 'x'],
+]);
+
+it('rejects a lone carriage return after a line ending backslash', function () {
+    expect(static fn () => toml_decode("a = \"\"\"x\\\n\ry\"\"\"\n"))->toThrow(TomlError::class);
+});
+
+it('rejects a line ending backslash with only whitespace up to the end of the input', function () {
+    expect(static fn () => toml_decode("a = \"\"\"x\\\n \n"))->toThrow(TomlError::class);
+});
+
+it('decodes nested tables and arrays into objects', function () {
+    $decoded = toml_decode("a = 1\nlist = [1, [2], { x = 3 }]\ninline = { y = { z = 4 } }\n[t.sub]\nk = 5\n[[items]]\nv = 6\n");
+
+    expect($decoded)->toEqual((object) [
+        'a' => 1,
+        'list' => [1, [2], (object) ['x' => 3]],
+        'inline' => (object) ['y' => (object) ['z' => 4]],
+        't' => (object) ['sub' => (object) ['k' => 5]],
+        'items' => [(object) ['v' => 6]],
+    ])
+        ->and($decoded->t)->toBeInstanceOf(stdClass::class)
+        ->and($decoded->list)->toBeArray();
+});

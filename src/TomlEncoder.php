@@ -98,6 +98,7 @@ class TomlEncoder
 
     protected static function formatString(string $s): string
     {
+        /** @noinspection JsonEncodingApiUsageInspection */
         return preg_replace('/\x7f/', '\\u007f', json_encode($s, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 
