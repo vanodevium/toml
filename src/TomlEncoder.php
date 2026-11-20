@@ -17,18 +17,15 @@ class TomlEncoder
      */
     public static function encode(array|stdClass $input): string
     {
-        if (is_array($input)) {
-            $input = self::toObject($input);
-        }
-
-        if (self::extendedTypeOf($input) !== 'object') {
-            throw new TomlError('stringify can only be called with an object');
-        }
-
-        return self::stringifyTable($input);
+        return self::stringifyTable(self::toObject($input));
     }
 
-    protected static function toObject(array $arrayObject): array|object
+    /**
+     * Normalizes the input into stdClass tables and list arrays, so the encoder only reads
+     * properties of stdClass objects. Other objects contribute what foreach sees from here:
+     * public properties, or the items of a Traversable such as ArrayObject.
+     */
+    protected static function toObject(array|object $arrayObject): stdClass
     {
         $return = new stdClass;
 
@@ -80,9 +77,9 @@ class TomlEncoder
             $type = self::extendedTypeOf($value);
             $key = self::formatKey($k);
             if ($type === 'array' && self::isArrayOfTables($value)) {
-                $tables .= self::stringifyArrayTable($value, $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key);
+                $tables .= self::stringifyArrayTable($value, $prefix !== '' ? "$prefix.$key" : $key);
             } elseif ($type === 'object') {
-                $tblKey = $prefix !== '' && $prefix !== '0' ? "$prefix.$key" : $key;
+                $tblKey = $prefix !== '' ? "$prefix.$key" : $key;
                 $tables .= "[$tblKey]\n";
                 $tables .= self::stringifyTable($value, $tblKey);
                 $tables .= "\n\n";
@@ -189,7 +186,7 @@ class TomlEncoder
     /**
      * @throws TomlError
      */
-    protected static function stringifyInlineTable(array|stdClass $obj): string
+    protected static function stringifyInlineTable(stdClass $obj): string
     {
         $pairs = [];
         foreach (array_keys((array) $obj) as $k) {

@@ -46,6 +46,9 @@
         "preferred-install": "dist",
         "allow-plugins": {
             "pestphp/pest-plugin": true
+        },
+        "platform": {
+            "php": "8.2"
         }
     },
     "scripts": {
@@ -58,6 +61,11 @@
         "test": [
             "@test:refacto",
             "@test:lint",
+            "@test:types",
+            "@test:unit"
+        ],
+        "test:no-mbstring": [
+            "@test:refacto",
             "@test:types",
             "@test:unit"
         ]

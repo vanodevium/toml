@@ -184,3 +184,40 @@ it('cannot support arrays contain null values', function () {
     expect(static fn () => toml_encode(['list' => [1, 2, null, 3, 4]]))
         ->toThrow(TomlError::class, 'arrays cannot contain null values');
 });
+
+it('can encode nested arrays and objects inside stdClass', function () {
+    $o = new stdClass;
+    $o->a = [['x' => 1], 5];
+    expect(toml_encode($o))->toEqual('a = [ { x = 1 }, 5 ]');
+
+    $o = new stdClass;
+    $o->t = ['k' => 1];
+    expect(toml_encode($o))->toEqual("[t]\nk = 1");
+
+    $o = new stdClass;
+    $o->a = new ArrayObject(['k' => 1]);
+    expect(toml_encode($o))->toEqual("[a]\nk = 1");
+
+    $o = new stdClass;
+    $o->l = [new ArrayObject(['k' => 1])];
+    expect(toml_encode($o))->toEqual("[[l]]\nk = 1");
+
+    $o = new stdClass;
+    $o->p = new class
+    {
+        private int $x = 1;
+
+        protected int $z = 3;
+
+        public int $y = 2;
+    };
+    expect(toml_encode($o))->toEqual("[p]\ny = 2");
+});
+
+it('keeps the parent of tables nested under the key 0', function () {
+    $data = ['0' => ['sub' => ['k' => 1], 'list' => [['k' => 2]]]];
+    $expected = "[0]\n[0.sub]\nk = 1\n\n[[0.list]]\nk = 2";
+
+    expect(toml_encode($data))->toEqual($expected)
+        ->and(toml_decode(toml_encode($data), true))->toEqual($data);
+});

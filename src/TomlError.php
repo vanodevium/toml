@@ -40,8 +40,7 @@ final class TomlError extends Exception
      */
     protected function getLineColFromPosition(string $string, int $position): array
     {
-        // position 0 has always measured the whole input
-        $lines = preg_split(self::RE, $position === 0 ? $string : substr($string, 0, $position));
+        $lines = preg_split(self::RE, substr($string, 0, $position));
 
         return [count($lines), strlen(array_pop($lines))];
     }
@@ -59,7 +58,7 @@ final class TomlError extends Exception
 
         for ($i = $line - 1; $i <= $line + 1; $i++) {
             $l = $lines[$i - 1] ?? null;
-            if (! $l) {
+            if ($l === null) {
                 continue;
             }
 

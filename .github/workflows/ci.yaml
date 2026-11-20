@@ -25,3 +25,23 @@ jobs:
 
       - name: Run tests
         run: composer test
+
+  no-mbstring:
+    runs-on: ubuntu-latest
+    name: PHP 8.6 without ext-mbstring
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.6"
+          extensions: :mbstring
+
+      - name: Install dependencies
+        run: composer install
+
+      # Pint needs ext-mbstring, so lint runs only in the jobs above
+      - name: Run tests
+        run: composer test:no-mbstring

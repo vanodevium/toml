@@ -310,18 +310,22 @@ final class TomlTokenizer
 
         if ($char === 'u' || $char === 'U') {
             $size = $char === 'u' ? 4 : 8;
-            $codePoint = '';
+            $hex = '';
             for ($i = 0; $i < $size; $i++) {
                 $char = $iterator->next();
                 if (! isset(self::HEX_DIGITS[$char])) {
                     throw new TomlError('unexpected EOF or invalid unicode: '.$char);
                 }
-                $codePoint .= $char;
+                $hex .= $char;
             }
 
-            // ext-mbstring returns false for invalid code points, the polyfill wraps them above U+10FFFF
-            $result = mb_chr(intval($codePoint, 16));
-            if ($result === false || $result > "\u{10ffff}") {
+            // only Unicode scalar values: checked here, because symfony/polyfill-mbstring's
+            // mb_chr() encodes surrogates and wraps code points above U+10FFFF instead of failing
+            $codePoint = intval($hex, 16);
+            $result = $codePoint > 0x10FFFF || ($codePoint >= 0xD800 && $codePoint <= 0xDFFF)
+                ? false
+                : mb_chr($codePoint);
+            if ($result === false) {
                 throw new TomlError('unexpected invalid unicode character: '.$char);
             }
 

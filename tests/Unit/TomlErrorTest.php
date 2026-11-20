@@ -65,3 +65,24 @@ TOML_STRING;
 
         expect(static fn () => toml_decode($toml, true))->toThrow(TomlError::class, $message);
     });
+
+it('reports an error at position 0 on the first line', function () {
+    $message = "Invalid TOML document: unexpected token type: EQUALS\n\n1:  =\n    ^\n2:  b = 1\n";
+
+    try {
+        toml_decode("=\nb = 1\nc = 2\n");
+        $this->fail('TomlError was not thrown');
+    } catch (TomlError $e) {
+        expect($e->getMessage())->toBe($message)
+            ->and($e->tomlLine)->toBe(1)
+            ->and($e->tomlColumn)->toBe(0);
+    }
+});
+
+it('shows empty lines and lines that are just 0 in the code block', function () {
+    expect(static fn () => toml_decode("a = 1\n\n= 2\n\nb = 3"))
+        ->toThrow(TomlError::class, "Invalid TOML document: unexpected token type: EQUALS\n\n2:  \n3:  = 2\n    ^\n4:  \n");
+
+    expect(static fn () => toml_decode("a = 1\n0\nb = 2"))
+        ->toThrow(TomlError::class, "Invalid TOML document: unexpected assertion\n\n1:  a = 1\n2:  0\n    ^\n3:  b = 2\n");
+});

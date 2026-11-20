@@ -455,6 +455,9 @@ final class TomlParser
             if (! $isSignAllowed) {
                 throw new TomlError('unexpected sign (+/-)');
             }
+            if ($length === 1) {
+                throw new TomlError('unexpected sign without digits');
+            }
             $sign = $value[0];
             $i++;
         }

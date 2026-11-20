@@ -238,6 +238,10 @@ Both use a key starting with a NUL byte (`"\u0000"`), which PHP objects cannot h
 
 Contributions are welcome! Please feel free to submit a Pull Request
 
+Run `composer test` before you submit. The library itself does not need ext-mbstring (it falls back to
+`symfony/polyfill-mbstring`), but Pint, used by `composer test`, does. On a system without ext-mbstring, run
+`composer test:no-mbstring` instead: it runs everything except the lint step.
+
 ## License
 
 **devium/toml** is open-sourced software licensed under the [MIT license](./LICENSE.md).

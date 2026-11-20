@@ -221,3 +221,31 @@ TOML_STRING;
         expect($parsed['pi'])->toBeFloat()->toEqual(3.141592653589793)
             ->and($parsed['-pi'])->toBeFloat()->toEqual(-3.141592653589793);
     });
+
+it('rejects a sign without digits', function (string $toml) {
+    expect(static fn () => toml_decode($toml))
+        ->toThrow(TomlError::class, 'unexpected sign without digits');
+})->with([
+    'bare minus' => "a = -\n",
+    'bare minus in an array' => "a = [-]\n",
+    'exponent sign without digits' => "a = 1e-\n",
+]);
+
+it('rejects unicode escapes that are not scalar values', function (string $escape) {
+    expect(static fn () => toml_decode("a = \"$escape\"\n"))
+        ->toThrow(TomlError::class, 'unexpected invalid unicode character');
+})->with([
+    'first surrogate' => '\uD800',
+    'last surrogate' => '\uDFFF',
+    'just above U+10FFFF' => '\U00110000',
+    'wraps to "A" in the polyfill' => '\U00200041',
+    'wraps to "\0" in the polyfill' => '\U00200000',
+]);
+
+it('accepts unicode escapes at the scalar value boundaries', function (string $escape, string $expected) {
+    expect(toml_decode("a = \"$escape\"\n", true))->toBe(['a' => $expected]);
+})->with([
+    'before the surrogates' => ['퟿', "\u{D7FF}"],
+    'after the surrogates' => ['', "\u{E000}"],
+    'U+10FFFF' => ['\U0010FFFF', "\u{10FFFF}"],
+]);
