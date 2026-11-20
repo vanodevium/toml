@@ -162,10 +162,6 @@ class TomlEncoder
         }
 
         if ($type === 'date') {
-            if ($value === false) {
-                throw new TomlError('cannot serialize invalid date');
-            }
-
             if ($value instanceof DateTimeInterface) {
                 return TomlInternalDateTime::toTOMLString($value);
             }

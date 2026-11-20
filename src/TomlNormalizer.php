@@ -98,7 +98,8 @@ final class TomlNormalizer
                 self::isKeyValuePair(end($prevValue))) {
                 self::mergeInto(end($prevValue), $nextValue);
             } elseif (isset($prevValue)) {
-                throw new TomlError('unexpected value');
+                // unreachable: TomlKeystore rejects conflicting definitions while parsing
+                throw new TomlError('unexpected value'); // @codeCoverageIgnore
             } else {
                 $acc->offsetSet($key, $nextValue);
             }

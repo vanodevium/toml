@@ -150,10 +150,7 @@ final class TomlParser
                 if ($tokenizer->isEOF()) {
                     break;
                 }
-                if ($tokenizer->peek()->type !== TomlToken::NEWLINE) {
-                    throw new TomlError('unexpected assertion');
-                }
-                $tokenizer->skip();
+                $tokenizer->assert(TomlToken::NEWLINE);
 
                 continue;
             }
@@ -489,7 +486,10 @@ final class TomlParser
 
         // an underscore must sit between two digits
         $digits = substr($value, $i, $end - $i);
-        if ($digits === '' || $digits[0] === '_' || $digits[-1] === '_' || str_contains($digits, '__')) {
+        if ($digits === '') {
+            throw new TomlError('unexpected non-numeric value');
+        }
+        if ($digits[0] === '_' || $digits[-1] === '_' || str_contains($digits, '__')) {
             throw new TomlError('unexpected underscore symbol');
         }
         $i = $end;

@@ -26,9 +26,10 @@ final class TomlLocalTime extends TomlInternalDateTime
 
         $components = explode(':', (string) $value);
         [$hour, $minute] = array_map(intval(...), array_slice($components, 0, 2));
-        $p = array_map(intval(...), explode('.', $components[2]));
-        $second = $p[0];
-        $millisecond = $p[1] ?? 0;
+        [$second, $fraction] = explode('.', $components[2]) + [1 => ''];
+        $second = (int) $second;
+        // the fraction is in seconds: ".05" is 50 ms; digits beyond milliseconds are dropped
+        $millisecond = (int) str_pad(substr($fraction, 0, 3), 3, '0');
 
         if (! self::isHour($hour) || ! self::isMinute($minute) || ! self::isSecond($second)) {
             throw new TomlError("invalid local time format \"$value\"");
@@ -53,6 +54,6 @@ final class TomlLocalTime extends TomlInternalDateTime
             return '';
         }
 
-        return ".$this->millisecond";
+        return '.'.rtrim($this->zeroPad($this->millisecond, 3), '0');
     }
 }

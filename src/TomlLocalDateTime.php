@@ -54,6 +54,6 @@ final class TomlLocalDateTime extends TomlInternalDateTime
             return '';
         }
 
-        return ".$this->millisecond";
+        return '.'.rtrim($this->zeroPad($this->millisecond, 3), '0');
     }
 }

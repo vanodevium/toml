@@ -10,7 +10,8 @@ use Devium\Toml\Nodes\TableNode;
 /**
  * Tracks defined keys and tables to reject duplicate definitions.
  *
- * Keys are stored as dotted paths, array table entries as "path.[index]".
+ * Keys are stored as dotted paths of escaped components, array table entries as "path.[index]";
+ * an escaped component has no "." and does not start with "[", so neither can be mistaken for structure.
  *
  * @internal
  */
@@ -27,8 +28,11 @@ final class TomlKeystore
     /** @var array<string, true> */
     private array $arrayTables = [];
 
-    /** @var array<string, true> */
+    /** @var array<string, true> tables defined by dotted keys */
     private array $implicitTables = [];
+
+    /** @var array<string, true> tables on the way to a [table] or [[table]] header */
+    private array $superTables = [];
 
     /** @var array<string, array{0: int, 1: string}> derived header => [seq, arrayTableKey] of the latest array-table entry with that header */
     private array $latestByHeader = [];
@@ -63,7 +67,7 @@ final class TomlKeystore
         foreach ($components as $i => $component) {
             $key .= ($i !== 0 ? '.' : '').$component;
 
-            if (isset($this->keys[$key]) || isset($this->tables[$key]) || isset($this->tables["$key.[0]"])) {
+            if (isset($this->keys[$key]) || isset($this->tables[$key]) || isset($this->superTables[$key]) || isset($this->tables["$key.[0]"])) {
                 throw new TomlError('key duplication');
             }
 
@@ -89,7 +93,7 @@ final class TomlKeystore
     {
         $components = [];
         foreach ($keyNode->keys() as $key) {
-            $components[] = $key->value;
+            $components[] = strtr($key->value, ['\\' => '\\\\', '.' => '\\:', '[' => '\\(']);
         }
 
         return $components;
@@ -108,12 +112,7 @@ final class TomlKeystore
 
         // a table under an array table belongs to its latest entry
         if ($foundArrayTable !== null) {
-            $foundArrayTableHeader = $this->makeHeaderFromArrayTable($foundArrayTable);
-
-            $components = array_filter(
-                $this->unescapedExplode('.', substr($header, strlen($foundArrayTableHeader))),
-                static fn (string $component) => $component !== ''
-            );
+            $components = array_slice($components, substr_count($this->makeHeaderFromArrayTable($foundArrayTable), '.') + 1);
 
             if ($components === []) {
                 throw new TomlError('broken key');
@@ -122,10 +121,8 @@ final class TomlKeystore
             $key = "$foundArrayTable.";
         }
 
-        $i = 0;
-        foreach ($components as $component) {
-            $key .= ($i !== 0 ? '.' : '').str_replace('.', '\.', $component);
-            $i++;
+        foreach ($components as $i => $component) {
+            $key .= ($i !== 0 ? '.' : '').$component;
 
             if (isset($this->keys[$key])) {
                 throw new TomlError('key duplication');
@@ -146,29 +143,35 @@ final class TomlKeystore
     {
         $header = implode('.', $this->makeKeyComponents($arrayTableNode->key));
 
-        if (isset($this->keys[$header]) || isset($this->tables[$header]) || isset($this->implicitTables[$header])) {
-            throw new TomlError('key duplication');
-        }
-
         $key = $header;
         $parent = $this->nearestEntry($header, false);
         if ($parent !== null) {
             $key = $parent[1].substr($header, strlen($this->makeHeaderFromArrayTable($parent[1])));
         }
+
+        // no parent table on the way may be a value
+        $offset = $parent !== null ? strlen($parent[1]) + 1 : 0;
+        while (($dot = strpos($key, '.', $offset)) !== false) {
+            if (isset($this->keys[substr($key, 0, $dot)])) {
+                throw new TomlError('key duplication');
+            }
+            $offset = $dot + 1;
+        }
+
+        if (isset($this->keys[$key]) || isset($this->tables[$key]) || isset($this->implicitTables[$key])) {
+            throw new TomlError('key duplication');
+        }
+
         $index = $this->arrayCounts[$key] ?? 0;
 
         // the first entry must not come after a sub-table of it
         if ($index === 0) {
-            $prefix = "$header.";
+            $prefix = "$key.";
             foreach ($this->tables as $table => $_) {
                 if (str_starts_with($table, $prefix)) {
                     throw new TomlError('key duplication');
                 }
             }
-        }
-
-        if (isset($this->keys[$key]) || isset($this->tables[$key])) {
-            throw new TomlError('key duplication');
         }
 
         $this->arrayCounts[$key] = $index + 1;
@@ -185,30 +188,24 @@ final class TomlKeystore
         if (! isset($this->tables[$key])) {
             $this->tables[$key] = true;
             $this->lastTable = $key;
+
+            $offset = 0;
+            while (($dot = strpos($key, '.', $offset)) !== false) {
+                $this->superTables[substr($key, 0, $dot)] = true;
+                $offset = $dot + 1;
+            }
         }
     }
 
     /**
-     * Finds the most recent array-table entry whose header is a prefix of $header:
-     * any prefix when $anyPrefix, otherwise only prefixes ending right before a dot.
+     * Finds the most recent array-table entry whose header is made of leading components of $header,
+     * including $header itself when $orSelf.
      *
      * @return array{0: int, 1: string}|null
      */
-    private function nearestEntry(string $header, bool $anyPrefix): ?array
+    private function nearestEntry(string $header, bool $orSelf): ?array
     {
         $best = null;
-
-        if ($anyPrefix) {
-            $length = strlen($header);
-            for ($k = 0; $k <= $length; $k++) {
-                $entry = $this->latestByHeader[substr($header, 0, $k)] ?? null;
-                if ($entry !== null && ($best === null || $entry[0] > $best[0])) {
-                    $best = $entry;
-                }
-            }
-
-            return $best;
-        }
 
         $offset = 0;
         while (($k = strpos($header, '.', $offset)) !== false) {
@@ -217,6 +214,11 @@ final class TomlKeystore
                 $best = $entry;
             }
             $offset = $k + 1;
+        }
+
+        $entry = $orSelf ? $this->latestByHeader[$header] ?? null : null;
+        if ($entry !== null && ($best === null || $entry[0] > $best[0])) {
+            $best = $entry;
         }
 
         return $best;
@@ -230,22 +232,9 @@ final class TomlKeystore
         return implode(
             '.',
             array_filter(
-                $this->unescapedExplode('.', $arrayTable),
+                explode('.', $arrayTable),
                 static fn (string $item) => ! str_starts_with($item, '[')
             )
-        );
-    }
-
-    /**
-     * Splits $value by $character, ignoring occurrences escaped with a backslash.
-     *
-     * @return string[]
-     */
-    protected function unescapedExplode(string $character, string $value): array
-    {
-        return array_map(
-            static fn (string $item) => str_replace(__METHOD__, $character, $item),
-            explode($character, str_replace('\\'.$character, __METHOD__, $value))
         );
     }
 }
