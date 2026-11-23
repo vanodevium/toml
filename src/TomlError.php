@@ -8,11 +8,11 @@ final class TomlError extends Exception
 {
     public const RE = '/\r\n|\n|\r/';
 
-    public mixed $tomlLine;
+    public mixed $tomlLine = 0;
 
-    public mixed $tomlColumn;
+    public mixed $tomlColumn = 0;
 
-    public string $tomlCodeBlock;
+    public string $tomlCodeBlock = '';
 
     public function __construct(
         string $message = '',

@@ -2,7 +2,8 @@
 
 namespace Devium\Toml;
 
-use DateTimeInterface;
+use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
 use Stringable;
 
@@ -11,7 +12,7 @@ use Stringable;
  */
 abstract class TomlInternalDateTime implements Stringable, TomlDateTimeInterface
 {
-    public static function toTOMLString(DateTimeInterface $dateTime): string
+    public static function toTOMLString(DateTime|DateTimeImmutable $dateTime): string
     {
         $ms = $dateTime->format('u');
 

@@ -19,7 +19,7 @@ class TomlDateTime extends DateTimeImmutable implements Stringable, TomlDateTime
             throw new TomlError('datetime format must have leading zero');
         }
 
-        if (! TomlInternalDateTime::isValidFebruary($matches[1], $matches[3], $matches[5])) {
+        if (! TomlInternalDateTime::isValidFebruary((int) $matches[1], (int) $matches[3], (int) $matches[5])) {
             throw new TomlError('invalid local date: days of February');
         }
 
