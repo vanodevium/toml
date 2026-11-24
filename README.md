@@ -251,3 +251,8 @@ Run `composer test` before you submit. The library itself does not need ext-mbst
 ---
 
 Made with ❤️ in Ukraine
+
+<p>
+  <a href="https://buymeacoffee.com/devium"><img src="https://cdn.buymeacoffee.com/buttons/lato-black.png" alt="Buy Me A Coffee" height="40"></a>
+  <a href="https://buymeatokens.com/devium"><img src="https://buymeatokens.com/api/badge/devium" alt="Buy me AI tokens" height="40"></a>
+</p>
